@@ -16,9 +16,12 @@ import javafx.stage.StageStyle;
 public class ConfDB extends Stage {
 
 	private GridPane content;
+	
+	private App app;
 
-	public ConfDB() {
+	public ConfDB(App app) {
 		super();
+		this.app = app;
 		initStyle(StageStyle.UTILITY);
 		
 		content = new GridPane();
@@ -67,7 +70,13 @@ public class ConfDB extends Stage {
 			App.port = txtPort.getText();
 			App.db = txtDb.getText();
 			App.userName = txtUsern.getText();
-			App.passwd = txtPasswd.getText();
+			if(txtPasswd.getText().isEmpty()) {
+				App.passwd = null;
+			}
+			
+			app.refreshTable();
+			
+			close();
 		});
 		
 		btnCancel.setOnAction((event) -> {

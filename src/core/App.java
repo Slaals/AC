@@ -84,14 +84,16 @@ public class App extends Application {
 	
 	public static TextFlow CONSOLE;
 	
-	private static CheckBox actModularity;
-	private static CheckBox actModularityByCluster;
-	private static Button btnGenNodes;
-	private static Button btnGenEdges;
-	private static Button btnShowChanges;
-	private static Button btnShowModularity;
-	private static Button btnShowModularityByCluster;
-	private static Button btnShowGraph;
+	private CheckBox actModularity;
+	private CheckBox actModularityByCluster;
+	private Button btnGenNodes;
+	private Button btnGenEdges;
+	private Button btnShowChanges;
+	private Button btnShowModularity;
+	private Button btnShowModularityByCluster;
+	private Button btnShowGraph;
+	
+	private ComboBox<String> comboTableName;
 	
 	private Dynamic dynamic;
 	
@@ -138,10 +140,12 @@ public class App extends Application {
 		Label lblTable = new Label("Table name");
 		
 		ObservableList<String> options = getTables();
-		ComboBox<String> comboTableName = new ComboBox<String>(options);
+		comboTableName = new ComboBox<String>(options);
 		comboTableName.setPrefWidth(300);
-		comboTableName.getSelectionModel().select(options.get(0));
-		TABLE_NAME = options.get(0);
+		if(!options.isEmpty()) {
+			comboTableName.getSelectionModel().select(options.get(0));
+			TABLE_NAME = options.get(0);
+		}
 		
 		Label lblNbCluster = new Label("Nb. Clusters");
 		
@@ -157,6 +161,7 @@ public class App extends Application {
 		consoleView.setFitToWidth(true);
 		
 		Button clearConsole = new Button("Clear");
+		
 		CONSOLE = new TextFlow();
 		CONSOLE.setStyle("-fx-background-color: #272823;"
 				+ "-fx-padding: 6px;");
@@ -237,13 +242,6 @@ public class App extends Application {
 		btnShowModularityByCluster.setCursor(Cursor.HAND);
 		btnSaveConsole.setCursor(Cursor.HAND);
 		btnShowGraph.setCursor(Cursor.HAND);
-		
-		btnGenNodes.setDisable(true);
-		btnGenEdges.setDisable(true);
-		btnShowChanges.setDisable(true);
-		btnShowModularity.setDisable(true);
-		btnShowModularityByCluster.setDisable(true);
-		btnShowGraph.setDisable(true);
 		
 		btnsPane.setStyle(neverUsed
 				+ "-fx-background-color: #D1D6D2;"
@@ -345,7 +343,22 @@ public class App extends Application {
 		});
 		
 		btnShowGraph.setOnAction(event -> {
-			renderGraph();
+			//Init a project
+	        ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);
+	        pc.newProject();
+	        
+			for(int clusterId = 0; clusterId < dynamic.getMatrixNode().size(); clusterId++) {
+				PApplet applet = renderGraph(dynamic.getMatrixNode().get(clusterId), dynamic.getMatrixEdge().get(clusterId), pc);
+
+		        //Add the applet to a JFrame and display
+		        JFrame frame = new JFrame("Graph Preview");
+		        frame.setLayout(new BorderLayout());
+		        
+		        frame.add(applet, BorderLayout.CENTER);
+		        
+		        frame.pack();
+		        frame.setVisible(true);
+			}
 		});
 		
 		txtNbCluster.setOnKeyReleased((event) -> {
@@ -379,8 +392,6 @@ public class App extends Application {
 				CONSOLE.getChildren().add(textLaunch);
 				
 				consoleView.layout();
-				
-				notifyBtns(false);
 
 				dynamic.start();
 			} catch (Exception e) {
@@ -394,7 +405,7 @@ public class App extends Application {
 		
 		MenuItem confDB = new MenuItem("Database");
 		confDB.setOnAction((event) -> {
-			new ConfDB();
+			new ConfDB(this);
 		});
 		
 		conf.getItems().add(confDB);
@@ -424,85 +435,47 @@ public class App extends Application {
 		btnShowModularityByCluster.setStyle(style);
 	}
 	
-	public static void notifyBtns(boolean ready) {
-		btnGenNodes.setDisable(!ready);
-		btnGenEdges.setDisable(!ready);
-		btnShowChanges.setDisable(!ready);
-		btnShowGraph.setDisable(!ready);
-		
-		if(ready) {
-			if(actModularity.isSelected()) {
-				btnShowModularity.setDisable(false);
-			} else {
-				btnShowModularity.setDisable(true);
-			}
-			
-			if(actModularityByCluster.isSelected()) {
-				btnShowModularityByCluster.setDisable(false);
-			} else {
-				btnShowModularityByCluster.setDisable(true);
-			}
-		}
-	}
-	
-	private void renderGraph() {
-		//t=1
-		String[][] nodes;
-		String[][] edges;
-		
-		for(int clusterId = 0; clusterId < dynamic.getMatrixNode().size(); clusterId++) {
-			HashMap<String, org.gephi.graph.api.Node> nodesKey = new HashMap<String, org.gephi.graph.api.Node>();
-			
-			nodes = dynamic.getMatrixNode().get(clusterId);
-			edges = dynamic.getMatrixEdge().get(clusterId);
-			
-			//Init a project
-	        ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);
-	        pc.newProject();
-	        Workspace workspace = pc.getCurrentWorkspace();
-	        
-	        //Get a graph model
-	        GraphModel graphModel = Lookup.getDefault().lookup(GraphController.class).getModel();
-	        AttributeModel attModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
-	        PartitionController partController = Lookup.getDefault().lookup(PartitionController.class);
-	        
-	        ForceAtlasLayout layout = new ForceAtlasLayout(null);
-	        layout.setGraphModel(graphModel);
-	        layout.resetPropertiesValues();
-	        layout.setRepulsionStrength(800.0);
-	        
-	        Container container = Lookup.getDefault().lookup(ContainerFactory.class).newContainer();
-	        UndirectedGraph graph = graphModel.getUndirectedGraph();
-	        
-	        for(String[] node : nodes) {
-	        	org.gephi.graph.api.Node n = graphModel.factory().newNode(node[1]);
-	        	nodesKey.put(node[1], n);
-	        	graph.addNode(n);
-	        }
-	        
-	        for(int i = 0; i < edges.length; i++) {
-	        	graph.addEdge(graphModel.factory().newEdge(nodesKey.get(edges[i][0]), nodesKey.get(edges[i][1]), 1f, false));
-	        }
-	        
-	        Modularity modu = new Modularity();
-	        modu.execute(graphModel, attModel);
-	        
-	        AttributeColumn modColumn = attModel.getNodeTable().getColumn(Modularity.MODULARITY_CLASS);
-	        Partition<?> p = partController.buildPartition(modColumn, graph);
-	        
-	        NodeColorTransformer nodeColorTr = new NodeColorTransformer();
-	        nodeColorTr.randomizeColors(p);
-	        partController.transform(p, nodeColorTr);
+	private PApplet renderGraph(String[][] nodes, String[][] edges, ProjectController pc) {
+		HashMap<String, org.gephi.graph.api.Node> nodesKey = new HashMap<String, org.gephi.graph.api.Node>();
 
-	        //Append container to graph structure
-	        ImportController importController = Lookup.getDefault().lookup(ImportController.class);
-	        importController.process(container, new DefaultProcessor(), workspace);
+        Workspace workspace = pc.newWorkspace(pc.getCurrentProject());
+        
+        //Get a graph model
+        GraphModel graphModel = Lookup.getDefault().lookup(GraphController.class).getModel();
+        AttributeModel attModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
+        PartitionController partController = Lookup.getDefault().lookup(PartitionController.class);
+        
+        ForceAtlasLayout layout = new ForceAtlasLayout(null);
+        layout.setGraphModel(graphModel);
+        layout.resetPropertiesValues();
+        layout.setRepulsionStrength(800.0);
+        
+        UndirectedGraph graph = graphModel.getUndirectedGraph();
+        
+        for(String[] node : nodes) {
+        	org.gephi.graph.api.Node n = graphModel.factory().newNode(node[1]);
+        	nodesKey.put(node[1], n);
+        	graph.addNode(n);
+        }
+        
+        for(int i = 0; i < edges.length; i++) {
+        	graph.addEdge(graphModel.factory().newEdge(nodesKey.get(edges[i][0]), nodesKey.get(edges[i][1]), 1f, false));
+        }
+        
+        Modularity modu = new Modularity();
+        modu.execute(graphModel, attModel);
+        
+        AttributeColumn modColumn = attModel.getNodeTable().getColumn(Modularity.MODULARITY_CLASS);
+        Partition<?> p = partController.buildPartition(modColumn, graph);
+        
+        NodeColorTransformer nodeColorTr = new NodeColorTransformer();
+        nodeColorTr.randomizeColors(p);
+        partController.transform(p, nodeColorTr);
 
-	        layout.initAlgo();
-	        for(int i = 0; i < 100 && layout.canAlgo(); i++) {
-	        	layout.goAlgo();
-	        }
-		}
+        layout.initAlgo();
+        for(int i = 0; i < 100 && layout.canAlgo(); i++) {
+        	layout.goAlgo();
+        }
 		
 		//Preview configuration
         PreviewController previewController = Lookup.getDefault().lookup(PreviewController.class);
@@ -514,8 +487,14 @@ public class App extends Application {
         previewModel.getProperties().putValue(PreviewProperty.EDGE_THICKNESS, 0.5f);
         previewModel.getProperties().putValue(PreviewProperty.BACKGROUND_COLOR, Color.WHITE);
         previewController.refreshPreview();
-		
-		//New Processing target, get the PApplet
+        
+    	Container container = Lookup.getDefault().lookup(ContainerFactory.class).newContainer();
+    	
+    	//Append container to graph structure
+        ImportController importController = Lookup.getDefault().lookup(ImportController.class);
+        importController.process(container, new DefaultProcessor(), workspace);
+        
+        //New Processing target, get the PApplet
         ProcessingTarget target = (ProcessingTarget) previewController.getRenderTarget(RenderTarget.PROCESSING_TARGET);
         PApplet applet = target.getApplet();
         applet.init();
@@ -524,15 +503,8 @@ public class App extends Application {
         previewController.render(target);
         target.refresh();
         target.resetZoom();
-
-        //Add the applet to a JFrame and display
-        JFrame frame = new JFrame("Graph Preview");
-        frame.setLayout(new BorderLayout());
         
-        frame.add(applet, BorderLayout.CENTER);
-        
-        frame.pack();
-        frame.setVisible(true);
+        return applet;
 	}
 	
 	private ObservableList<String> getTables() {
@@ -557,5 +529,9 @@ public class App extends Application {
 		}
 		
 		return options;
+	}
+	
+	public void refreshTable() {
+		comboTableName.setItems(getTables());
 	}
 }

@@ -829,8 +829,6 @@ public class Dynamic extends Thread{
 			App.CONSOLE.getChildren().add(textFinished);
 			App.CONSOLE.layout();
 		});
-		
-		Platform.runLater(() -> App.notifyBtns(true));
 	}
 
 	// Merge 2nd and 3rd eigenvectors to create the NEW subspace for KMEANS
@@ -1156,13 +1154,6 @@ public class Dynamic extends Thread{
 
 		// DETERMINATE THE INITIAL CENTROIDS WITH THE FIRST K DATAPOINTS
 		for (int i = 0; i < clusters; i++) {
-			// centroids[i][0]=(((max1-min1)/clusters)*(i+0.5));
-			// centroids[i][1]=subspacebeta[i*(i+clusters)][1];
-
-			// centroids[i][1]=((max2-((max2-min2)/2)));
-
-			// int a = new Integer(subspacebeta.length/clusters).intValue();
-
 			centroids[i][0] = subspacebeta0[i][0];
 			centroids[i][1] = subspacebeta0[i][1];
 
@@ -1430,7 +1421,7 @@ public class Dynamic extends Thread{
 				
 				for (int row = 0; row < matrix.length; row++) {
 					writer.append("\n");
-					writer.append(row + "");
+					writer.append(matrix[row][1] + "");
 					writer.append(";");
 					writer.append(matrix[row][1] + "");
 					writer.append(";");
@@ -1472,9 +1463,9 @@ public class Dynamic extends Thread{
 				writer.append("weight");
 				
 				for (int row = 0; row < matrix.length; row++) {
-					//System.out.print(matrix[row][column] + " ");
+					int id = row + 1;
 					writer.append("\n");
-					writer.append(row + "");
+					writer.append(id + "");
 					writer.append(";");
 					writer.append(matrix[row][0] + "");
 					writer.append(";");
