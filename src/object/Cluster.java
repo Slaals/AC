@@ -7,11 +7,9 @@ public class Cluster {
 
 	private String edgeList[][]; // list of edges (from node to node)
 	private List<Double> edgeWeight = new ArrayList<Double>();
-	// double edgeweight[][];//weight of each edge
 	private int nbEdge; // quantity of initial edges
 	private int nbNode; // quantity of nodes
 	private String nodeList[]; // list of nodes names
-	private ArrayList<Integer> finalLabel; // final label of clusters
 	private double subSpace[][]; // subspace where the kmeans works
 	private String clusterLabel[][]; // table with the final cluster labels node by node
 	private int pointPerCluster[][];
@@ -47,7 +45,6 @@ public class Cluster {
 	private List<String> fNode = new ArrayList<String>();
 	private List<String> tNode = new ArrayList<String>();
 	private List<Double> weight = new ArrayList<Double>();
-	private int edgesnumber = 0; // ??
 	private ArrayList<String> nodeListAux = new ArrayList<String>();
 	private int nod = 0; // ??
 	private int dNode = 0;
@@ -61,14 +58,12 @@ public class Cluster {
 		weight.add(edgeWeight[0]);
 		timeNodes.add(edges[0]);
 		timeNodes.add(edges[1]);
-		edgesnumber += 1;
 	}
 	
 	public void removeRedundant(int index) {
 		fNode.remove(index);
 		tNode.remove(index);
 		weight.remove(index);
-		edgesnumber -= 1;
 	}
 	
 	public void addFromNode(String value) {

@@ -10,17 +10,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import javafx.application.Platform;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import Jama.Matrix;
 import object.Edge;
 
-
-
-
-
-/////////////////////////
 import org.jblas.DoubleMatrix;
 import org.jblas.SimpleBlas;
 
@@ -148,6 +142,7 @@ public class Dynamic extends Thread{
 		clusters[1].eigenValue2(eigenValue.get(1));
 		clusters[1].eigenValue3(eigenValue.get(2));
 
+		//clusters[1].clusterLabel(kmeans(eigenVector.toArray2(), nbCluster, clusters[1].accumnodelist, time));
 		clusters[1].clusterLabel(kmeans(subSpaceBeta.getArray(), nbCluster, clusters[1].accumnodelist, time));
 
 		matrixNode.add(clusters[1].clusterlabel);
@@ -231,16 +226,9 @@ public class Dynamic extends Thread{
 		
 		totalChrono += topChrono;
 		
-		final Text actualTime = new Text("Time " +  time + " : " + nodespercluster);
-		actualTime.setFill(Color.WHITE);
-		Platform.runLater(() -> App.CONSOLE.getChildren().add(actualTime));
+		App.logConsole("Time " +  time + " : " + nodespercluster, App.PLAIN);
 		
-		final Text done = new Text(" -> Done! in  " + topChrono + "ms\n\n");
-		done.setFill(Color.web("#B3D9B4"));
-		Platform.runLater(() -> {
-			App.CONSOLE.getChildren().add(done);
-			App.CONSOLE.layout();
-		});
+		App.logConsole(" -> Done! in  " + topChrono + "ms\n\n", App.SUCCESS);
 		
 		chrono = System.currentTimeMillis();
 		
@@ -370,12 +358,8 @@ public class Dynamic extends Thread{
 			
 			startSpectralClustering(nbNode, nbEdgeByTime, time);
 		} catch (Exception e) {
-			Text text = new Text("Got an exception!\n\n");
-			text.setFill(Color.web("#F6888B"));
-			Platform.runLater(() -> {
-				App.CONSOLE.getChildren().add(text);
-				App.CONSOLE.layout();
-			});
+			App.logConsole("Got an exception!\n\n", App.WARNING);
+
 			e.printStackTrace();
 		}
 	}
@@ -734,9 +718,7 @@ public class Dynamic extends Thread{
 				}
 			}
 
-			Text actualTimeB = new Text("Time " +  time + " : " + nodesPerCluster);
-			actualTimeB.setFill(Color.WHITE);
-			Platform.runLater(() -> App.CONSOLE.getChildren().add(actualTimeB));
+			App.logConsole("Time " +  time + " : " + nodesPerCluster, App.PLAIN);
 			
 			matrixNode.add(clusters[time].clusterlabel);
 
@@ -813,22 +795,12 @@ public class Dynamic extends Thread{
 			
 			totalChrono += topChrono;
 			
-			Text doneB = new Text(" -> Done! in  " + topChrono + "ms\n\n");
-			doneB.setFill(Color.web("#B3D9B4"));
-			Platform.runLater(() -> {
-				App.CONSOLE.getChildren().add(doneB);
-				App.CONSOLE.layout();
-			});
+			App.logConsole(" -> Done! in  " + topChrono + "ms\n\n", App.SUCCESS);
 			
 			chrono = System.currentTimeMillis();
 		}
 		
-		Text textFinished = new Text("The algorithm has been successfully completed! in  " + totalChrono + "ms\n\n");
-		textFinished.setFill(Color.web("#B3D9B4"));
-		Platform.runLater(() -> {
-			App.CONSOLE.getChildren().add(textFinished);
-			App.CONSOLE.layout();
-		});
+		App.logConsole("The algorithm has been successfully completed! in  " + totalChrono + "ms\n\n", App.SUCCESS);
 	}
 
 	// Merge 2nd and 3rd eigenvectors to create the NEW subspace for KMEANS
@@ -1172,8 +1144,6 @@ public class Dynamic extends Thread{
 
 			for (int i = 0; i < nodes; i++) {
 				for (int j = 0; j < clusters; j++) {
-					// distance[i][j]=Math.pow(Math.sqrt(Math.pow(subspace[i][0]-centroids[j][0],
-					// 2)+Math.pow(subspace[i][1]-centroids[j][1], 2)),2);
 					distance[i][j] = Math.sqrt(Math.pow(subspacebeta0[i][0] - centroids[j][0], 2)
 									+ Math.pow(subspacebeta0[i][1] - centroids[j][1], 2));
 				}
@@ -1210,9 +1180,7 @@ public class Dynamic extends Thread{
 				}
 			}
 
-			// System.out.println("QUANTITY DATAPOINTS");
-			// displayint(quantitydatapoints);
-			// ///////////////////////////////////////THIRD STEP: Calculate the
+			// THIRD STEP: Calculate the
 			// new centroid for each cluster of datapoints (datapoints fixed in
 			// each cluster, centroid dynamic)
 
@@ -1428,17 +1396,13 @@ public class Dynamic extends Thread{
 					writer.append(matrix[row][2] + "");
 				}
 				
-				Text text = new Text(App.DATA_PATH + "\\" + App.TABLE_NAME + "_nodes_t" + time + ".csv" + " created!\n\n");
-				text.setFill(Color.web("#B3D9B4"));
-				App.CONSOLE.getChildren().add(text);
+				App.logConsole(App.DATA_PATH + "\\" + App.TABLE_NAME + "_nodes_t" + time + ".csv" + " created!\n\n", App.SUCCESS);
 				
 				writer.flush();
 				writer.close();
 			} catch (IOException e) {
-				Text text = new Text("An exception has been encountered while trying to create "
-						+ App.TABLE_NAME + "_nodes_t" + time + ".csv\n\n");
-				text.setFill(Color.web("#F6888B"));
-				App.CONSOLE.getChildren().add(text);
+				App.logConsole("An exception has been encountered while trying to create "
+						+ App.TABLE_NAME + "_nodes_t" + time + ".csv\n\n", App.WARNING);
 				
 				e.printStackTrace();
 			}
@@ -1476,10 +1440,8 @@ public class Dynamic extends Thread{
 					writer.append("1");
 				}
 				
-				Text text = new Text(App.DATA_PATH + "\\" + App.TABLE_NAME + "_edges_t" + time + ".csv" + " created!\n\n");
-				text.setFill(Color.web("#B3D9B4"));
-				App.CONSOLE.getChildren().add(text);
-				
+				App.logConsole(App.DATA_PATH + "\\" + App.TABLE_NAME + "_edges_t" + time + ".csv" + " created!\n\n", App.SUCCESS);
+
 				writer.flush();
 				writer.close();
 			} catch (IOException e) {

@@ -1,6 +1,5 @@
 package core;
 
-import java.awt.BorderLayout;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,37 +8,9 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.JFrame;
-
-import org.gephi.data.attributes.api.AttributeColumn;
-import org.gephi.data.attributes.api.AttributeController;
-import org.gephi.data.attributes.api.AttributeModel;
-import org.gephi.graph.api.GraphController;
-import org.gephi.graph.api.GraphModel;
-import org.gephi.graph.api.UndirectedGraph;
-import org.gephi.io.importer.api.Container;
-import org.gephi.io.importer.api.ContainerFactory;
-import org.gephi.io.importer.api.ImportController;
-import org.gephi.io.processor.plugin.DefaultProcessor;
-import org.gephi.layout.plugin.forceAtlas.ForceAtlasLayout;
-import org.gephi.partition.api.Partition;
-import org.gephi.partition.api.PartitionController;
-import org.gephi.partition.plugin.NodeColorTransformer;
-import org.gephi.preview.api.PreviewController;
-import org.gephi.preview.api.PreviewModel;
-import org.gephi.preview.api.PreviewProperty;
-import org.gephi.preview.api.ProcessingTarget;
-import org.gephi.preview.api.RenderTarget;
-import org.gephi.project.api.ProjectController;
-import org.gephi.project.api.Workspace;
-import org.gephi.statistics.plugin.Modularity;
-import org.openide.util.Lookup;
-
-import processing.core.PApplet;
 import algorithm.Dynamic;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -63,9 +34,7 @@ import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
-
-import java.awt.Color;
-
+import javafx.scene.paint.Color;
 import javafx.scene.text.TextFlow;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -78,6 +47,11 @@ public class App extends Application {
 	public static String db = "graph1";
 	public static String userName = "root";
 	public static String passwd = "root";
+	
+	public static int WARNING = 0;
+	public static int INFO = 1;
+	public static int PLAIN = 2;
+	public static int SUCCESS = 3;
 	
 	public static String DATA_PATH = System.getProperty("user.dir");
 	public static String TABLE_NAME;
@@ -218,7 +192,7 @@ public class App extends Application {
 				+ "-fx-focus-color: transparent;"
 				+ "-fx-background-insets: -1.4, 0, 1, 2;";
 		
-		btnShowGraph = new Button("Show Graph");
+		btnShowGraph = new Button("Generate graphs");
 		
 		btnsPane.getChildren().add(btnGenNodes);
 		btnsPane.getChildren().add(btnGenEdges);
@@ -260,10 +234,8 @@ public class App extends Application {
 					writer.append(((Text)text).getText().replace("\n", System.lineSeparator()));
 				}
 				
-				Text text = new Text(App.DATA_PATH + "\\console.txt" + " created!\n\n");
-				text.setFill(javafx.scene.paint.Color.web("#B3D9B4"));
-				App.CONSOLE.getChildren().add(text);
-				
+				logConsole(App.DATA_PATH + "\\console.txt" + " created!\n\n", SUCCESS);
+
 				writer.flush();
 				writer.close();
 			} catch (IOException e) {
@@ -292,33 +264,21 @@ public class App extends Application {
 		btnShowChanges.setOnAction((event) -> {
 			btnShowChanges.setStyle(alreadyUsed);
 			for(String str : dynamic.getChanges()) {
-				Text txt = new Text(str);
-				txt.setFill(javafx.scene.paint.Color.web("#A1DAF5"));
-				
-				CONSOLE.getChildren().add(txt);
-				CONSOLE.layout();
+				logConsole(str, INFO);
 			}
 		});
 		
 		btnShowModularity.setOnAction((event) -> {
 			btnShowModularity.setStyle(alreadyUsed);
 			for(String str : dynamic.getModularity()) {
-				Text txt = new Text(str);
-				txt.setFill(javafx.scene.paint.Color.web("#A1DAF5"));
-				
-				CONSOLE.getChildren().add(txt);
-				CONSOLE.layout();
+				logConsole(str, INFO);
 			}
 		});
 		
 		btnShowModularityByCluster.setOnAction((event) -> {
 			btnShowModularityByCluster.setStyle(alreadyUsed);
 			for(String str : dynamic.getModularityCluster()) {
-				Text txt = new Text(str);
-				txt.setFill(javafx.scene.paint.Color.web("#A1DAF5"));
-				
-				CONSOLE.getChildren().add(txt);
-				CONSOLE.layout();
+				logConsole(str, INFO);
 			}
 		});
 		
@@ -344,21 +304,26 @@ public class App extends Application {
 		
 		btnShowGraph.setOnAction(event -> {
 			//Init a project
-	        ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);
+	       /*ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);
 	        pc.newProject();
 	        
-			for(int clusterId = 0; clusterId < dynamic.getMatrixNode().size(); clusterId++) {
-				PApplet applet = renderGraph(dynamic.getMatrixNode().get(clusterId), dynamic.getMatrixEdge().get(clusterId), pc);
-
-		        //Add the applet to a JFrame and display
-		        JFrame frame = new JFrame("Graph Preview");
-		        frame.setLayout(new BorderLayout());
-		        
-		        frame.add(applet, BorderLayout.CENTER);
-		        
-		        frame.pack();
-		        frame.setVisible(true);
-			}
+	        ArrayList<File> files = new ArrayList<File>();
+	        
+	        Thread t = new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					for(int time = 0; time < dynamic.getMatrixNode().size(); time++) {
+						renderGraph(dynamic.getMatrixNode().get(time), dynamic.getMatrixEdge().get(time), pc, time + 1, files);
+					}
+					
+					mergeFiles(files);
+				}
+			});
+	        
+	        t.start();*/
+			GraphGenerator gg = new GraphGenerator(dynamic.getMatrixNode(), dynamic.getMatrixEdge());
+			gg.renderGraph();
 		});
 		
 		txtNbCluster.setOnKeyReleased((event) -> {
@@ -387,11 +352,7 @@ public class App extends Application {
 			try {
 				dynamic = new Dynamic();
 				
-				Text textLaunch = new Text("The algorithm has been executed on the table '" + TABLE_NAME + "', please wait until it's finished...\n\n");
-				textLaunch.setFill(javafx.scene.paint.Color.web("#FFFFFF"));
-				CONSOLE.getChildren().add(textLaunch);
-				
-				consoleView.layout();
+				logConsole("The algorithm has been executed on the table '" + TABLE_NAME + "', please wait until it's finished...\n\n", PLAIN);
 
 				dynamic.start();
 			} catch (Exception e) {
@@ -435,78 +396,36 @@ public class App extends Application {
 		btnShowModularityByCluster.setStyle(style);
 	}
 	
-	private PApplet renderGraph(String[][] nodes, String[][] edges, ProjectController pc) {
-		HashMap<String, org.gephi.graph.api.Node> nodesKey = new HashMap<String, org.gephi.graph.api.Node>();
-
-        Workspace workspace = pc.newWorkspace(pc.getCurrentProject());
-        
-        //Get a graph model
-        GraphModel graphModel = Lookup.getDefault().lookup(GraphController.class).getModel();
-        AttributeModel attModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
-        PartitionController partController = Lookup.getDefault().lookup(PartitionController.class);
-        
-        ForceAtlasLayout layout = new ForceAtlasLayout(null);
-        layout.setGraphModel(graphModel);
-        layout.resetPropertiesValues();
-        layout.setRepulsionStrength(800.0);
-        
-        UndirectedGraph graph = graphModel.getUndirectedGraph();
-        
-        for(String[] node : nodes) {
-        	org.gephi.graph.api.Node n = graphModel.factory().newNode(node[1]);
-        	nodesKey.put(node[1], n);
-        	graph.addNode(n);
-        }
-        
-        for(int i = 0; i < edges.length; i++) {
-        	graph.addEdge(graphModel.factory().newEdge(nodesKey.get(edges[i][0]), nodesKey.get(edges[i][1]), 1f, false));
-        }
-        
-        Modularity modu = new Modularity();
-        modu.execute(graphModel, attModel);
-        
-        AttributeColumn modColumn = attModel.getNodeTable().getColumn(Modularity.MODULARITY_CLASS);
-        Partition<?> p = partController.buildPartition(modColumn, graph);
-        
-        NodeColorTransformer nodeColorTr = new NodeColorTransformer();
-        nodeColorTr.randomizeColors(p);
-        partController.transform(p, nodeColorTr);
-
-        layout.initAlgo();
-        for(int i = 0; i < 100 && layout.canAlgo(); i++) {
-        	layout.goAlgo();
-        }
+	public static void logConsole(String str, int type) {
+		final Text txt;
+		switch(type) {
+			case 0:
+				txt = new Text(str);
+				txt.setFill(Color.web("#F6888B"));
+				break;
+			case 1:
+				txt = new Text(str);
+				txt.setFill(javafx.scene.paint.Color.web("#A1DAF5"));
+				break;
+			case 2:
+				txt = new Text(str);
+				txt.setFill(javafx.scene.paint.Color.web("#FFFFFF"));
+				break;
+			case 3:
+				txt = new Text(str);
+				txt.setFill(javafx.scene.paint.Color.web("#B3D9B4"));
+				break;
+			default:
+				txt = new Text("");
+				break;
+		}
 		
-		//Preview configuration
-        PreviewController previewController = Lookup.getDefault().lookup(PreviewController.class);
-        PreviewModel previewModel = previewController.getModel();
-        previewModel.getProperties().putValue(PreviewProperty.NODE_BORDER_WIDTH, 0.1f);
-        previewModel.getProperties().putValue(PreviewProperty.SHOW_NODE_LABELS, Boolean.FALSE);
-        previewModel.getProperties().putValue(PreviewProperty.EDGE_CURVED, Boolean.FALSE);
-        previewModel.getProperties().putValue(PreviewProperty.EDGE_RADIUS, 2f);
-        previewModel.getProperties().putValue(PreviewProperty.EDGE_THICKNESS, 0.5f);
-        previewModel.getProperties().putValue(PreviewProperty.BACKGROUND_COLOR, Color.WHITE);
-        previewController.refreshPreview();
-        
-    	Container container = Lookup.getDefault().lookup(ContainerFactory.class).newContainer();
-    	
-    	//Append container to graph structure
-        ImportController importController = Lookup.getDefault().lookup(ImportController.class);
-        importController.process(container, new DefaultProcessor(), workspace);
-        
-        //New Processing target, get the PApplet
-        ProcessingTarget target = (ProcessingTarget) previewController.getRenderTarget(RenderTarget.PROCESSING_TARGET);
-        PApplet applet = target.getApplet();
-        applet.init();
-
-        //Refresh the preview and reset the zoom
-        previewController.render(target);
-        target.refresh();
-        target.resetZoom();
-        
-        return applet;
+		Platform.runLater(() -> {
+			CONSOLE.getChildren().add(txt);
+			CONSOLE.layout();
+		});
 	}
-	
+
 	private ObservableList<String> getTables() {
 		ObservableList<String> options = FXCollections.observableArrayList();
 		// Step 1: Load the JDBC driver. jdbc:mysql://localhost:3306/travel
