@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.gephi.data.attributes.api.AttributeController;
 import org.gephi.data.attributes.api.AttributeModel;
@@ -28,6 +29,7 @@ public class GraphGenerator {
 	private ArrayList<String[][]> matrixEdges;
 	
 	private HashMap<Node, LinkedHashSet<Integer>> nodesInterval;
+	private HashMap<Node, HashMap<Integer, String>> nodesClustersInterval;
 	private HashMap<Edge, LinkedHashSet<Integer>> edgesInterval;
 	
 	private ProjectController pc;
@@ -39,6 +41,7 @@ public class GraphGenerator {
 		this.matrixEdges = matrixEdges;
 		
 		this.nodesInterval = new HashMap<Node, LinkedHashSet<Integer>>();
+		this.nodesClustersInterval = new HashMap<Node, HashMap<Integer, String>>();
 		this.edgesInterval = new HashMap<Edge, LinkedHashSet<Integer>>();
 		
 		init();
@@ -65,20 +68,28 @@ public class GraphGenerator {
 				// If node has been created, add just the interval time
 				if(nodesKey.containsKey(node[1])) {
 					Node targetedNode = nodesKey.get(node[1]);
+					
 					nodesInterval.get(targetedNode).add(time);
+					
+					// Clusters label
+					nodesClustersInterval.get(targetedNode).put(time, node[2]);
 				} else {
 					Node n = graphModel.factory().newNode(node[1]);
 					
 					n.getNodeData().getAttributes().setValue("Label", node[1]);
-					n.getNodeData().getAttributes().setValue("cluster", node[2]);
 					
 					graph.addNode(n);
 					
 					nodesKey.put(node[1], n);
 					
 					LinkedHashSet<Integer> interval = new LinkedHashSet<Integer>();
+					HashMap<Integer, String> clusterInterval = new HashMap<Integer, String>();
+					
 					interval.add(time);
+					clusterInterval.put(time, node[2]);
+					
 					nodesInterval.put(n, interval);
+					nodesClustersInterval.put(n, clusterInterval);
 				}
 			}
 		}
@@ -108,12 +119,19 @@ public class GraphGenerator {
 		}
 	}
 	
+	/**
+	 * Generate all the intervals to fill dynamic columns
+	 */
 	private void genIntervals() {
 		// Nodes interval
 		for(Map.Entry<Node, LinkedHashSet<Integer>> entry : nodesInterval.entrySet()) {
 			LinkedHashSet<Integer> intervals = entry.getValue();
 			
+			// Interval time of node life
 			entry.getKey().getNodeData().getAttributes().setValue("time", createInterval(intervals));
+			
+			// Interval time of cluster label
+			entry.getKey().getNodeData().getAttributes().setValue("cluster", createClustersInterval(entry.getKey()));
 		}
 		
 		// Edges interval
@@ -124,6 +142,11 @@ public class GraphGenerator {
 		}
 	}
 	
+	/**
+	 * Create intervals as string, for instance : [1, 3] = fromtime 1 totime 3
+	 * @param intervals
+	 * @return
+	 */
 	private String createInterval(LinkedHashSet<Integer> intervals) {
 		String strInterval = "";
 		boolean initInterval = false;
@@ -134,6 +157,45 @@ public class GraphGenerator {
 			} else if(!initInterval) {
 				strInterval += " [" + time + ", ";
 				initInterval = true;
+			}
+		}
+		
+		return strInterval;
+	}
+	
+	private String createClustersInterval(Node n) {
+		String strInterval = "";
+		String lastLabel = "";
+
+		boolean initInterval = false;
+		int time = 0;
+		int lastTime = 0;
+		
+		HashMap<Integer, String> labelInteval = nodesClustersInterval.get(n);
+		
+		for(Entry<Integer, String> entry : labelInteval.entrySet()) {
+			time = entry.getKey();
+			
+			if(!initInterval) {
+				// Allows to follow the time interval, for instance : [1, 1)[1, 2]
+				if(lastTime > 0) {
+					strInterval += " [" + lastTime + ", ";
+				} else {
+					strInterval += " [" + time + ", ";
+				}
+				lastLabel = entry.getValue();
+				initInterval = true;
+			}
+			
+			if(labelInteval.containsKey(time + 1)) {
+				// If the next label is different from the last, close the current interval and start a new one
+				if(!labelInteval.get(time + 1).equals(lastLabel)) {
+					strInterval += time + ", " + lastLabel + "];";
+					lastTime = time;
+					initInterval = false;
+				}
+			} else { // Close the last interval when it's the end of the map
+				strInterval += time + ", " + entry.getValue() + "];";
 			}
 		}
 		
@@ -153,7 +215,7 @@ public class GraphGenerator {
         timeColumn.addAttributeColumn(attModel.getNodeTable(), "time", AttributeType.TIME_INTERVAL);
         timeColumn.addAttributeColumn(attModel.getEdgeTable(), "time", AttributeType.TIME_INTERVAL);
         
-        clusterColumn.addAttributeColumn(attModel.getNodeTable(), "cluster", AttributeType.STRING);
+        clusterColumn.addAttributeColumn(attModel.getNodeTable(), "cluster", AttributeType.DYNAMIC_STRING);
         
         timeColumn.convertAttributeColumnToDynamic(attModel.getEdgeTable(), attModel.getEdgeTable().getColumn("Weight"), 
         		2000, Double.POSITIVE_INFINITY, false, false);
@@ -169,10 +231,10 @@ public class GraphGenerator {
         
         ExportController ec = Lookup.getDefault().lookup(ExportController.class);
         try {
-        	File file = new File(App.DATA_PATH + "\\" + App.TABLE_NAME + ".gexf\n\n");
+        	File file = new File(App.DATA_PATH + "\\" + App.TABLE_NAME + ".gexf");
         	ec.exportFile(file);
         	
-        	App.logConsole("File " + file.getAbsolutePath() + " created!", App.SUCCESS);
+        	App.logConsole("File " + file.getAbsolutePath() + " created!\n\n", App.SUCCESS);
         } catch(IOException ex) {
         	ex.printStackTrace();
         }

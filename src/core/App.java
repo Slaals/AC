@@ -303,25 +303,6 @@ public class App extends Application {
 		});
 		
 		btnShowGraph.setOnAction(event -> {
-			//Init a project
-	       /*ProjectController pc = Lookup.getDefault().lookup(ProjectController.class);
-	        pc.newProject();
-	        
-	        ArrayList<File> files = new ArrayList<File>();
-	        
-	        Thread t = new Thread(new Runnable() {
-				
-				@Override
-				public void run() {
-					for(int time = 0; time < dynamic.getMatrixNode().size(); time++) {
-						renderGraph(dynamic.getMatrixNode().get(time), dynamic.getMatrixEdge().get(time), pc, time + 1, files);
-					}
-					
-					mergeFiles(files);
-				}
-			});
-	        
-	        t.start();*/
 			GraphGenerator gg = new GraphGenerator(dynamic.getMatrixNode(), dynamic.getMatrixEdge());
 			gg.renderGraph();
 		});
