@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,9 +29,9 @@ public class GraphGenerator {
 	private ArrayList<String[][]> matrixNodes;
 	private ArrayList<String[][]> matrixEdges;
 	
-	private HashMap<Node, LinkedHashSet<Integer>> nodesInterval;
+	private LinkedHashMap<Node, LinkedHashSet<Integer>> nodesInterval;
 	private HashMap<Node, HashMap<Integer, String>> nodesClustersInterval;
-	private HashMap<Edge, LinkedHashSet<Integer>> edgesInterval;
+	private LinkedHashMap<Edge, LinkedHashSet<Integer>> edgesInterval;
 	
 	private ProjectController pc;
 	
@@ -40,9 +41,9 @@ public class GraphGenerator {
 		this.matrixNodes = matrixNodes;
 		this.matrixEdges = matrixEdges;
 		
-		this.nodesInterval = new HashMap<Node, LinkedHashSet<Integer>>();
+		this.nodesInterval = new LinkedHashMap<Node, LinkedHashSet<Integer>>();
 		this.nodesClustersInterval = new HashMap<Node, HashMap<Integer, String>>();
-		this.edgesInterval = new HashMap<Edge, LinkedHashSet<Integer>>();
+		this.edgesInterval = new LinkedHashMap<Edge, LinkedHashSet<Integer>>();
 		
 		init();
 	}
@@ -190,14 +191,16 @@ public class GraphGenerator {
 			if(labelInteval.containsKey(time + 1)) {
 				// If the next label is different from the last, close the current interval and start a new one
 				if(!labelInteval.get(time + 1).equals(lastLabel)) {
-					strInterval += time + ", " + lastLabel + "];";
-					lastTime = time;
+					strInterval += time + 1 + ", " + lastLabel + "];";
+					lastTime = time + 1;
 					initInterval = false;
 				}
 			} else { // Close the last interval when it's the end of the map
-				strInterval += time + ", " + entry.getValue() + "];";
+				strInterval += time + ", " + entry.getValue() + "]";
 			}
 		}
+		
+		System.out.println(strInterval);
 		
 		return strInterval;
 	}

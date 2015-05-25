@@ -408,7 +408,6 @@ public class Dynamic extends Thread{
 				}
 			}
 
-			// String edges [][] = new String [edgesnumber][2];
 			// Create a table of edges of current time instant
 			for (int i = 0; i < clusters[time].edgesnumber; i++) {
 				clusters[time].edges[i][0] = clusters[time].fnode.get(i);
