@@ -52,11 +52,11 @@ public class ConfDB extends Stage {
 		Label lblUsern = new Label("Username");
 		Label lblPasswd = new Label("Password");
 		
-		TextField txtAddr = new TextField(App.address);
-		TextField txtPort = new TextField(App.port);
-		TextField txtDb = new TextField(App.db);
-		TextField txtUsern = new TextField(App.userName);
-		TextField txtPasswd = new TextField(App.passwd);
+		TextField txtAddr = new TextField(Database.address);
+		TextField txtPort = new TextField(Database.port);
+		TextField txtDb = new TextField(Database.db);
+		TextField txtUsern = new TextField(Database.userName);
+		TextField txtPasswd = new TextField(Database.passwd);
 		
 		FlowPane btnPane = new FlowPane(Orientation.HORIZONTAL);
 		btnPane.setHgap(15);
@@ -66,12 +66,12 @@ public class ConfDB extends Stage {
 		btnCancel.setCursor(Cursor.HAND);
 		
 		btnSave.setOnAction((event) -> {
-			App.address = txtAddr.getText();
-			App.port = txtPort.getText();
-			App.db = txtDb.getText();
-			App.userName = txtUsern.getText();
+			Database.address = txtAddr.getText();
+			Database.port = txtPort.getText();
+			Database.db = txtDb.getText();
+			Database.userName = txtUsern.getText();
 			if(txtPasswd.getText().isEmpty()) {
-				App.passwd = null;
+				Database.passwd = null;
 			}
 			
 			app.refreshTable();

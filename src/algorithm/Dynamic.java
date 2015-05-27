@@ -2,10 +2,6 @@ package algorithm;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +15,7 @@ import org.jblas.DoubleMatrix;
 import org.jblas.SimpleBlas;
 
 import core.App;
+import core.Database;
 
 public class Dynamic extends Thread{
 	
@@ -235,6 +232,10 @@ public class Dynamic extends Thread{
 		nodespercluster.clear();
 	}
 	
+	public ArrayList<Edge> getEdgeList() {
+		return edgeList;
+	}
+	
 	private void initMatrix() {
 		// Quantity of edges at instant of time
 		int nbEdgeByTime = 0;
@@ -244,24 +245,7 @@ public class Dynamic extends Thread{
 		int time = 1;
 		
 		try {
-			// Step 1: Load the JDBC driver. jdbc:mysql://localhost:3306/travel
-			Class.forName("com.mysql.jdbc.Driver");
-
-			// Step 2: Connection to MYSQL database and extraction of the useful
-			// columns (fromnode, tonode, weight)
-			Connection conn = DriverManager.getConnection("jdbc:mysql://" + App.address + ":" + App.port + "/" + App.db, App.userName, App.passwd);
-			Statement st = conn.createStatement();
-			ResultSet srs = st.executeQuery("SELECT * FROM " + App.TABLE_NAME + "" + "" + "" + "");
-			while (srs.next()) {
-				Edge edgeData = new Edge();
-				edgeData.setFromnode(srs.getString("fromnode"));
-				edgeData.setTonode(srs.getString("tonode"));
-				edgeData.setFromtime(srs.getInt("fromtime"));
-				edgeData.setTotime(srs.getInt("totime"));
-				edgeData.setWeight(srs.getDouble("weight"));
-				
-				edgeList.add(edgeData);
-			}
+			Database.getMatrix(this);
 			
 			nbEdges = edgeList.size();
 			

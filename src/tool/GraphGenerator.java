@@ -1,4 +1,4 @@
-package core;
+package tool;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +23,8 @@ import org.gephi.io.exporter.api.ExportController;
 import org.gephi.io.importer.api.ContainerFactory;
 import org.gephi.project.api.ProjectController;
 import org.openide.util.Lookup;
+
+import core.App;
 
 public class GraphGenerator {
 	
@@ -199,9 +201,7 @@ public class GraphGenerator {
 				strInterval += time + ", " + entry.getValue() + "]";
 			}
 		}
-		
-		System.out.println(strInterval);
-		
+
 		return strInterval;
 	}
 	

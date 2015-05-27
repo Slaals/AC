@@ -3,18 +3,15 @@ package core;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import tool.GraphGenerator;
+import tool.MatrixCreator;
 import algorithm.Dynamic;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -30,6 +27,7 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -41,12 +39,6 @@ import javafx.stage.Stage;
 import javafx.scene.text.Text;
 
 public class App extends Application {
-	
-	public static String address = "localhost";
-	public static String port = "3306";
-	public static String db = "graph1";
-	public static String userName = "root";
-	public static String passwd = "root";
 	
 	public static int WARNING = 0;
 	public static int INFO = 1;
@@ -113,7 +105,7 @@ public class App extends Application {
 		
 		Label lblTable = new Label("Table name");
 		
-		ObservableList<String> options = getTables();
+		ObservableList<String> options = Database.getTables();
 		comboTableName = new ComboBox<String>(options);
 		comboTableName.setPrefWidth(300);
 		if(!options.isEmpty()) {
@@ -352,7 +344,27 @@ public class App extends Application {
 		
 		conf.getItems().add(confDB);
 		
+		Menu tools = new Menu("Tool");
+		
+		MenuItem createMatrix = new MenuItem("Create graph");
+		createMatrix.setOnAction((event) -> {
+			TextInputDialog dialog = new TextInputDialog("10");
+			dialog.setTitle("Matrix creator tool");
+			dialog.setHeaderText("Choose the number of nodes");
+			dialog.setContentText("Enter the number of nodes");
+			
+			Optional<String> result = dialog.showAndWait();
+			if(result.isPresent()) {
+				new MatrixCreator(result.get(), this);
+				
+				refreshTable();
+			}
+		});
+		
+		tools.getItems().add(createMatrix);
+		
 		menuBar.getMenus().add(conf);
+		menuBar.getMenus().add(tools);
 		
 		mainPane.setTop(menuBar);
 		mainPane.setCenter(form);
@@ -406,32 +418,8 @@ public class App extends Application {
 			CONSOLE.layout();
 		});
 	}
-
-	private ObservableList<String> getTables() {
-		ObservableList<String> options = FXCollections.observableArrayList();
-		// Step 1: Load the JDBC driver. jdbc:mysql://localhost:3306/travel
-		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			
-			// Step 2: Connection to MYSQL database and extraction of the useful
-			// columns (fromnode, tonode, weight)
-			Connection conn = DriverManager.getConnection("jdbc:mysql://" + address + ":" + port + "/" + db, userName, passwd);
-			DatabaseMetaData md = conn.getMetaData();
-			ResultSet rs = md.getTables(null, null, "%", null);
-			while(rs.next()) {
-				options.add(rs.getString(3));
-			}
-			
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		return options;
-	}
 	
 	public void refreshTable() {
-		comboTableName.setItems(getTables());
+		comboTableName.setItems(Database.getTables());
 	}
 }
