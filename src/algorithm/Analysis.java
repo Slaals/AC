@@ -58,7 +58,7 @@ public class Analysis {
 				edges.setTonode(srs.getString("tonode"));
 				edges.setFromtime(srs.getInt("fromtime"));
 				edges.setTotime(srs.getInt("totime"));
-				edges.setWeight(srs.getDouble("weight"));
+				edges.setWeight(srs.getInt("weight"));
 				edgeslist.add(edges);
 			}
 			

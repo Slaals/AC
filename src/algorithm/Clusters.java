@@ -165,7 +165,7 @@ public class Clusters {
 		return pointpercluster;
 	}
 
-	public String[][] clusterLabel(String newValue[][]) {
+	public String[][] clusterLabel(String[][] newValue) {
 		this.clusterlabel = newValue;
 		return clusterlabel;
 	}

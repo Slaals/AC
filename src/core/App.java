@@ -3,12 +3,12 @@ package core;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import tool.GraphGenerator;
 import tool.MatrixCreator;
+import tool.MatrixEditor;
 import algorithm.Dynamic;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -27,7 +27,6 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -310,8 +309,8 @@ public class App extends Application {
 		
 		DirectoryChooser dirChooser = new DirectoryChooser();
 		dirChooser.setTitle("Choose the path for your data");
-		dirChooser.setInitialDirectory(new File(txtPath.getText()));
 		btnPath.setOnAction((event) -> {
+			dirChooser.setInitialDirectory(new File(txtPath.getText()));
 			File directory = dirChooser.showDialog(new Stage());
 			
 			if(directory != null) {
@@ -348,20 +347,20 @@ public class App extends Application {
 		
 		MenuItem createMatrix = new MenuItem("Create graph");
 		createMatrix.setOnAction((event) -> {
-			TextInputDialog dialog = new TextInputDialog("10");
-			dialog.setTitle("Matrix creator tool");
-			dialog.setHeaderText("Choose the number of nodes");
-			dialog.setContentText("Enter the number of nodes");
+			new MatrixCreator(this);
 			
-			Optional<String> result = dialog.showAndWait();
-			if(result.isPresent()) {
-				new MatrixCreator(result.get(), this);
-				
-				refreshTable();
-			}
+			refreshTable();
+		});
+		
+		MenuItem editMatrix = new MenuItem("Edit graph");
+		editMatrix.setOnAction((event) -> {
+			new MatrixEditor(this);
+			
+			refreshTable();
 		});
 		
 		tools.getItems().add(createMatrix);
+		tools.getItems().add(editMatrix);
 		
 		menuBar.getMenus().add(conf);
 		menuBar.getMenus().add(tools);

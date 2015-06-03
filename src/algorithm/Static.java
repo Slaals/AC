@@ -57,7 +57,7 @@ public class Static {
 				Edge edges = new Edge();
 				edges.setFromnode(srs.getString("fromnode"));
 				edges.setTonode(srs.getString("tonode"));
-				edges.setWeight(srs.getDouble("weight"));
+				edges.setWeight(srs.getInt("weight"));
 				edgeslist.add(edges);
 			}
 			// Print the number of data points "n"

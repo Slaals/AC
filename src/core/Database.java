@@ -6,8 +6,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedList;
 
-import algorithm.Dynamic;
 import object.Edge;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -41,6 +41,23 @@ public class Database {
 		return options;
 	}
 	
+	public static void updateTable(String tableName, String label, String fromNode, String toNode) {
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			
+			Statement st = getConnection().createStatement();
+			
+			String updateValues = "UPDATE " + tableName + " SET fromnode=" +
+					fromNode + ", tonode=" + toNode + " WHERE name=" + label + ";";
+			
+			st.executeUpdate(updateValues);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static void createTableGraph(String tableName) {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -61,7 +78,7 @@ public class Database {
 			
 			st.executeUpdate(createTable);
 			
-			App.logConsole("Table " + tableName + " created!\n\n", App.SUCCESS);
+			App.logConsole("Table " + tableName + " created! ", App.SUCCESS);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
@@ -76,7 +93,7 @@ public class Database {
 			Statement st = getConnection().createStatement();
 			
 			String insertValues = "INSERT INTO " + tableName + "(fromnode, tonode) VALUES(" +
-					fromNode + ", " + toNode + "), (" + toNode + ", " + fromNode +");";
+					fromNode + ", " + toNode + ");";
 			
 			st.executeUpdate(insertValues);
 		} catch (ClassNotFoundException e) {
@@ -86,27 +103,73 @@ public class Database {
 		}
 	}
 	
-	public static void getMatrix(Dynamic dynamic) {
+	public static void refreshTable(String tableName) {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			
 			Statement st = getConnection().createStatement();
-			ResultSet srs = st.executeQuery("SELECT * FROM " + App.TABLE_NAME + "" + "" + "" + "");
-			while (srs.next()) {
-				Edge edgeData = new Edge();
-				edgeData.setFromnode(srs.getString("fromnode"));
-				edgeData.setTonode(srs.getString("tonode"));
-				edgeData.setFromtime(srs.getInt("fromtime"));
-				edgeData.setTotime(srs.getInt("totime"));
-				edgeData.setWeight(srs.getDouble("weight"));
-				
-				dynamic.getEdgeList().add(edgeData);
-			}
+			
+			String deleteValues = "DELETE FROM " + tableName;
+			
+			st.executeUpdate(deleteValues);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static LinkedList<Edge> getMatrix() {
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			
+			Statement st = getConnection().createStatement();
+			ResultSet srs = st.executeQuery("SELECT * FROM " + App.TABLE_NAME + " ORDER BY name ASC");
+			
+			return generateEdgeMatrix(srs);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return new LinkedList<Edge>();
+	}
+	
+	public static LinkedList<Edge> getMatrixAtTime(String time) {
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			
+			Statement st = getConnection().createStatement();
+			ResultSet srs = st.executeQuery("SELECT * FROM " + App.TABLE_NAME
+					+ " WHERE fromtime=" + time + " AND totime=" + time + " ORDER BY fromnode ASC, tonode ASC");
+			
+			return generateEdgeMatrix(srs);
+			
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return new LinkedList<Edge>();
+	}
+	
+	private static LinkedList<Edge> generateEdgeMatrix(ResultSet srs) throws SQLException {
+		LinkedList<Edge> edgeList = new LinkedList<Edge>();
+		
+		while (srs.next()) {
+			Edge edgeData = new Edge();
+			edgeData.setFromnode(srs.getString("fromnode"));
+			edgeData.setTonode(srs.getString("tonode"));
+			edgeData.setFromtime(srs.getInt("fromtime"));
+			edgeData.setTotime(srs.getInt("totime"));
+			edgeData.setWeight(srs.getInt("weight"));
+			
+			edgeList.add(edgeData);
+		}
+		
+		return edgeList;
 	}
 	
 	private static Connection getConnection() throws SQLException {

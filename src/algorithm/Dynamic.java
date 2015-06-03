@@ -4,6 +4,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
 import javafx.scene.paint.Color;
@@ -33,7 +34,7 @@ public class Dynamic extends Thread{
 	
 	private ArrayList<String> nodeList;
 	
-	private ArrayList<Edge> edgeList;
+	private LinkedList<Edge> edgeList;
 	
 	private Clusters[] clusters;
 	
@@ -62,7 +63,7 @@ public class Dynamic extends Thread{
 		
 		nodeList = new ArrayList<String>();
 		
-		edgeList = new ArrayList<Edge>();
+		edgeList = new LinkedList<Edge>();
 		
 		clusters = new Clusters[100];
 		
@@ -140,8 +141,8 @@ public class Dynamic extends Thread{
 		clusters[1].eigenValue3(eigenValue.get(2));
 
 		//clusters[1].clusterLabel(kmeans(eigenVector.toArray2(), nbCluster, clusters[1].accumnodelist, time));
-		clusters[1].clusterLabel(kmeans(subSpaceBeta.getArray(), nbCluster, clusters[1].accumnodelist, time));
-
+		clusters[1].clusterLabel(labelizeClusters(subSpaceBeta.getArray(), nbCluster, clusters[1].accumnodelist, time));
+		
 		matrixNode.add(clusters[1].clusterlabel);
 
 		ArrayList<Integer> nodespercluster = new ArrayList<Integer>();
@@ -232,7 +233,7 @@ public class Dynamic extends Thread{
 		nodespercluster.clear();
 	}
 	
-	public ArrayList<Edge> getEdgeList() {
+	public LinkedList<Edge> getEdgeList() {
 		return edgeList;
 	}
 	
@@ -245,7 +246,7 @@ public class Dynamic extends Thread{
 		int time = 1;
 		
 		try {
-			Database.getMatrix(this);
+			edgeList = Database.getMatrix();
 			
 			nbEdges = edgeList.size();
 			
@@ -680,10 +681,25 @@ public class Dynamic extends Thread{
 					clusters[time].nodelist));
 
 			// Perform KMEANS in the new incremented subspace
-			clusters[time].clusterLabel(kmeans(
+			clusters[time].clusterLabel(labelizeClusters(
 					clusters[time].subspace, nbCluster,
 					clusters[time].nodelist, time));
 
+			Matrix subspaceb = Matrix.constructWithCopy(clusters[time].subspace);
+			Matrix evector22 = subspaceb.getMatrix(0, clusters[time].subspace.length - 1, 0, 0);
+			double evector2[][] = matrix2array(evector22);
+			Matrix evector33 = subspaceb.getMatrix(0, clusters[time].subspace.length - 1, 1, 1);
+			double evector3[][] = matrix2array(evector33);
+
+			double min1 = getMinValue(evector2);
+			double min2 = getMinValue(evector3);
+
+			double subspacebeta[][] = new double[clusters[time].subspace.length][2];
+			for (int i = 0; i < clusters[time].subspace.length; i++) {
+				subspacebeta[i][0] = clusters[time].subspace[i][0] - min1;
+				subspacebeta[i][1] = clusters[time].subspace[i][1] - min2;
+			}
+			
 			// GET THE QUANTITY OF NODES IN EACH CLUSTER
 			
 			ArrayList<Integer> nodesPerCluster = new ArrayList<Integer>();
@@ -1083,156 +1099,30 @@ public class Dynamic extends Thread{
 	}
 
 	// KMEANS
-	private String[][] kmeans(double subspacebeta0[][], int clusters, String nodelist[], int time) {
-
-		int nodes = subspacebeta0.length;
-		// MODIFICACION TEMPORAL
-		// int nodes = nodelist.length;
-
-		Matrix subspaceb = Matrix.constructWithCopy(subspacebeta0);
-		Matrix evector22 = subspaceb.getMatrix(0, subspacebeta0.length - 1, 0, 0);
-		double evector2[][] = matrix2array(evector22);
-		Matrix evector33 = subspaceb.getMatrix(0, subspacebeta0.length - 1, 1, 1);
-		double evector3[][] = matrix2array(evector33);
+	private String[][] labelizeClusters(double subspacebeta[][], int clusters, String nodelist[], int time) {
+		Matrix subspaceb = Matrix.constructWithCopy(subspacebeta);
+		double evector2[][] = matrix2array(subspaceb.getMatrix(0, subspacebeta.length - 1, 0, 0));
+		double evector3[][] = matrix2array(subspaceb.getMatrix(0, subspacebeta.length - 1, 1, 1));
 
 		double min1 = getMinValue(evector2);
 		double min2 = getMinValue(evector3);
 
-		double subspacebeta[][] = new double[subspacebeta0.length][2];
-		for (int i = 0; i < subspacebeta0.length; i++) {
-			subspacebeta[i][0] = subspacebeta0[i][0] - min1;
-			subspacebeta[i][1] = subspacebeta0[i][1] - min2;
+		for (int i = 0; i < subspacebeta.length; i++) {
+			subspacebeta[i][0] -= min1;
+			subspacebeta[i][1] -= min2;
 		}
 
-		// ubicate the initial centroids in the subspace
-		double centroids[][] = new double[clusters][2];
+		int[] clustering = Kmeans.exec(clusters, subspacebeta);
 
-		// DETERMINATE THE INITIAL CENTROIDS WITH THE FIRST K DATAPOINTS
-		for (int i = 0; i < clusters; i++) {
-			centroids[i][0] = subspacebeta0[i][0];
-			centroids[i][1] = subspacebeta0[i][1];
-
-		}
-
-		// matrix where each node is labeled in a cluster where the distance to
-		// the centroid is the minimum
-		int label[][] = new int[nodes][clusters];
-
-		for (int h = 0; h < nodes; h++) {
-
-			// //////////////////////////////////////////FIRST STEP:calculate
-			// the SQUARED EUCLIDEAN DISTANCE between each datapoint and its
-			// cluster initial centroid
-			double distance[][] = new double[nodes][clusters];
-
-			for (int i = 0; i < nodes; i++) {
-				for (int j = 0; j < clusters; j++) {
-					distance[i][j] = Math.sqrt(Math.pow(subspacebeta0[i][0] - centroids[j][0], 2)
-									+ Math.pow(subspacebeta0[i][1] - centroids[j][1], 2));
-				}
-			}
-
-			// vector which contains the quantity of datapoints per cluster
-			int quantitydatapoints[][] = new int[clusters][1];
-
-			// /////////////////////////////////////////SECOND STEP: Assign
-			// datapoints to the closest cluster centroid (centroid fixed)
-			for (int p = 0; p < nodes; p++) {
-				double min = distance[p][0];
-				int positionmin = 0;// position of the minimum distance in the
-									// distance matrix.
-				for (int j = 0; j < clusters; j++) {
-					if (distance[p][j] < min) {
-						min = distance[p][j];
-						label[p][positionmin] = 0;
-						positionmin = j;
-					}
-				}
-				label[p][positionmin] = 1;
-
-				// Count how many points are in each cluster
-				quantitydatapoints[positionmin][0] = quantitydatapoints[positionmin][0] + 1;
-
-			}
-
-			// This restriction indicates that all the clusters must have at
-			// least one datapoint
-			for (int i = 0; i < clusters; i++) {
-				if (quantitydatapoints[i][0] == 0) {
-					h = nodes;
-				}
-			}
-
-			// THIRD STEP: Calculate the
-			// new centroid for each cluster of datapoints (datapoints fixed in
-			// each cluster, centroid dynamic)
-
-			// difference between the actual centroid and the new centroid (for
-			// X and Y)
-			double difference[][] = new double[clusters][2];
-
-			// the new centroids after iterations
-			double newcentroids[][] = new double[clusters][2];
-
-			// Total accumulative difference between centroids and new centroids
-			double accumdif = 0;
-
-			// MEAN of each cluster, that is the NEW centroid
-			for (int j = 0; j < clusters; j++) {
-				double totaldistancex = 0;
-				double totaldistancey = 0;
-				for (int l = 0; l < nodes; l++) {
-					if (label[l][j] == 1) {
-						totaldistancex = totaldistancex + subspacebeta0[l][0];
-						totaldistancey = totaldistancey + subspacebeta0[l][1];
-					}
-				}
-				// calculate the mean through X and Y of all the points in the
-				// same cluster
-				newcentroids[j][0] = totaldistancex / quantitydatapoints[j][0];
-				newcentroids[j][1] = totaldistancey / quantitydatapoints[j][0];
-
-				difference[j][0] = Math.sqrt(Math.pow(newcentroids[j][0] - centroids[j][0], 2));
-				difference[j][1] = Math.sqrt(Math.pow(newcentroids[j][1] - centroids[j][1], 2));
-				accumdif = accumdif + difference[j][0] + difference[j][1];
-
-				centroids[j][0] = newcentroids[j][0];
-				centroids[j][1] = newcentroids[j][1];
-			}
-
-			if (accumdif == 0) {
-				h = nodes;
-
-			}
-		}
-
-		// Store in the finalcluster1 array the results of the KMEANS
-		int finallabel[][] = label;
-
-		int finalcluster1[][] = new int[nodes][2];
-
-		for (int i = 0; i < nodes; i++) {
-			finalcluster1[i][0] = i + 1;
-			for (int j = 0; j < clusters; j++) {
-				if (finallabel[i][j] == 1) {
-					finalcluster1[i][1] = j + 1;
-				}
-
-			}
-
-		}
-
-		String finalclusters[][] = new String[nodes][3];
-		for (int i = 0; i < nodes; i++) {
-
-			// Fill the finalclusters array
-			finalclusters[i][2] = String.valueOf(finalcluster1[i][1]);
+		// Attribute cluster to nodes at time t
+		String finalclusters[][] = new String[clustering.length][3];
+		for (int i = 0; i < clustering.length; i++) {
+			finalclusters[i][2] = String.valueOf(clustering[i] + 1);
 			finalclusters[i][1] = nodelist[i];
 			finalclusters[i][0] = String.valueOf(time);
 		}
 
 		return finalclusters;
-
 	}
 
 	// Obtain the Diagonal Matrix for the actual time

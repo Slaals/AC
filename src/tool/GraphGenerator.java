@@ -166,12 +166,22 @@ public class GraphGenerator {
 		return strInterval;
 	}
 	
+	/**
+	 * Create interval time about cluster 
+	 * 
+	 * @param n node targeted
+	 * @return
+	 */
 	private String createClustersInterval(Node n) {
 		String strInterval = "";
-		String lastLabel = "";
+		String currentLabel = "";
 
 		boolean initInterval = false;
 		int time = 0;
+		
+		// [firstTime, time]
+		int firstTime = 0;
+		
 		int lastTime = 0;
 		
 		HashMap<Integer, String> labelInteval = nodesClustersInterval.get(n);
@@ -180,31 +190,45 @@ public class GraphGenerator {
 			time = entry.getKey();
 			
 			if(!initInterval) {
-				// Allows to follow the time interval, for instance : [1, 1)[1, 2]
+				// Allows to logically add the time interval, for instance : [1, 2)[2, 3]
 				if(lastTime > 0) {
-					strInterval += " [" + lastTime + ", ";
+					firstTime = lastTime;
 				} else {
-					strInterval += " [" + time + ", ";
+					firstTime = time;
 				}
-				lastLabel = entry.getValue();
+				
+				strInterval += " [" + firstTime + ", ";
+				
+				currentLabel = entry.getValue();
 				initInterval = true;
 			}
 			
 			if(labelInteval.containsKey(time + 1)) {
 				// If the next label is different from the last, close the current interval and start a new one
-				if(!labelInteval.get(time + 1).equals(lastLabel)) {
-					strInterval += time + 1 + ", " + lastLabel + "];";
-					lastTime = time + 1;
+				if(!labelInteval.get(time + 1).equals(currentLabel)) {
+					// Case where fromtime = 1 and totime = 1, Gephi doesn't permit this, must increment t before 
+					// in order to make [1, 2] instead of [1, 1]
+					if(firstTime == time) {
+						time += 1;
+					}
+					strInterval += time + ", " + currentLabel + "];";
+					
+					firstTime = 0;
+					lastTime = time;
+					
 					initInterval = false;
 				}
 			} else { // Close the last interval when it's the end of the map
-				strInterval += time + ", " + entry.getValue() + "]";
+				strInterval += "Infinity, " + entry.getValue() + "]";
 			}
 		}
-
+		
 		return strInterval;
 	}
 	
+	/**
+	 * Export the graph in gexf format
+	 */
 	public void renderGraph() {
         AttributeModel attModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
         AttributeColumnsController timeColumn = Lookup.getDefault().lookup(AttributeColumnsController.class);
@@ -215,9 +239,11 @@ public class GraphGenerator {
         
         genGraph();
         
+        // Time interval for edges and nodes
         timeColumn.addAttributeColumn(attModel.getNodeTable(), "time", AttributeType.TIME_INTERVAL);
         timeColumn.addAttributeColumn(attModel.getEdgeTable(), "time", AttributeType.TIME_INTERVAL);
         
+        // Cluster attributes linked to nodes
         clusterColumn.addAttributeColumn(attModel.getNodeTable(), "cluster", AttributeType.DYNAMIC_STRING);
         
         timeColumn.convertAttributeColumnToDynamic(attModel.getEdgeTable(), attModel.getEdgeTable().getColumn("Weight"), 
@@ -225,6 +251,7 @@ public class GraphGenerator {
         
         genIntervals();
         
+        // Necessary
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
