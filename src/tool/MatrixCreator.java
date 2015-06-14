@@ -23,9 +23,6 @@ public class MatrixCreator extends MatrixTool {
 		TextField tableName = new TextField("Tablename");
 		tableName.setAlignment(Pos.CENTER);
 		
-		TextField txtSplit = new TextField();
-		txtSplit.setMaxWidth(40);
-		
 		FlowPane btnPane = new FlowPane(Orientation.HORIZONTAL);
 		btnPane.setHgap(15);
 		Button btnGenerate = new Button("Generate");
@@ -38,14 +35,15 @@ public class MatrixCreator extends MatrixTool {
 		
 		btnPane.getChildren().add(tableName);
 		btnPane.getChildren().add(new Label("Split : "));
-		btnPane.getChildren().add(txtSplit);
+		btnPane.getChildren().add(split);
 		btnPane.getChildren().add(btnGenerate);
 		btnPane.getChildren().add(btnCancel);
 		
 		btnGenerate.setOnAction((event) -> {
 			Database.createTableGraph(tableName.getText());
 			
-			generateGraph(tableName.getText(), txtSplit.getText());
+			generateMatrixFromString();
+			saveGraph(tableName.getText());
 			
 			app.refreshTable();
 			
@@ -56,8 +54,12 @@ public class MatrixCreator extends MatrixTool {
 			close();
 		});
 		
-		content.getChildren().add(matrix);
-		content.getChildren().add(btnPane);
+		generateMatrixFromString();
+		generateTimeButtons();
+		
+		matrixPane.getChildren().add(timePane);
+		matrixPane.getChildren().add(matrix);
+		matrixPane.getChildren().add(btnPane);
 		
 	}
 

@@ -41,6 +41,22 @@ public class Database {
 		return options;
 	}
 	
+	public static void checkDatabase(String database) {
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			
+			Statement st = getConnection().createStatement();
+			
+			String createDbIfExists = "CREATE DATABASE IF NOT EXISTS " + database;
+			
+			st.executeUpdate(createDbIfExists);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static void updateTable(String tableName, String label, String fromNode, String toNode) {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -86,14 +102,49 @@ public class Database {
 		}
 	}
 	
-	public static void feedTable(String tableName, int fromNode, int toNode) {
+	public static int getTotalTime(String tableName) {
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			
+			Statement st = getConnection().createStatement();
+			ResultSet srs = st.executeQuery("SELECT MAX(totime) AS totime FROM " + App.TABLE_NAME);
+			
+			srs.next();
+			return srs.getInt("totime");
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return 0;
+	}
+	
+	public static void updateEdgeTime(String tableName, int fromNode, int toNode, int time) {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			
 			Statement st = getConnection().createStatement();
 			
-			String insertValues = "INSERT INTO " + tableName + "(fromnode, tonode) VALUES(" +
-					fromNode + ", " + toNode + ");";
+			String updateTime = "UPDATE " + tableName + " SET totime=" + time + " WHERE fromNode=" + 
+					fromNode + " AND toNode=" + toNode + ";";
+			
+			st.executeUpdate(updateTime);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void feedTable(String tableName, int fromNode, int toNode, int fromTime, int toTime) {
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			
+			Statement st = getConnection().createStatement();
+			
+			String insertValues = "INSERT INTO " + tableName + "(fromnode, tonode, fromtime, totime) VALUES(" +
+					fromNode + ", " + toNode + ", " + fromTime + ", " + toTime + ");";
 			
 			st.executeUpdate(insertValues);
 		} catch (ClassNotFoundException e) {
@@ -124,28 +175,9 @@ public class Database {
 			Class.forName("com.mysql.jdbc.Driver");
 			
 			Statement st = getConnection().createStatement();
-			ResultSet srs = st.executeQuery("SELECT * FROM " + App.TABLE_NAME + " ORDER BY name ASC");
+			ResultSet srs = st.executeQuery("SELECT * FROM " + App.TABLE_NAME + " ORDER BY fromnode ASC, tonode ASC");
 			
 			return generateEdgeMatrix(srs);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		return new LinkedList<Edge>();
-	}
-	
-	public static LinkedList<Edge> getMatrixAtTime(String time) {
-		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			
-			Statement st = getConnection().createStatement();
-			ResultSet srs = st.executeQuery("SELECT * FROM " + App.TABLE_NAME
-					+ " WHERE fromtime=" + time + " AND totime=" + time + " ORDER BY fromnode ASC, tonode ASC");
-			
-			return generateEdgeMatrix(srs);
-			
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {

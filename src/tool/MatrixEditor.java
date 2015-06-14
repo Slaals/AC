@@ -32,18 +32,7 @@ public class MatrixEditor extends MatrixTool {
 		FlowPane tablePane = new FlowPane(Orientation.HORIZONTAL);
 		tablePane.setHgap(10);
 		
-		Label lblTime = new Label("Time : ");
-		TextField txtTime = new TextField("1");
-		txtTime.setMaxWidth(25);
-		
-		Button btnRefresh = new Button("Refresh");
-		
 		tablePane.getChildren().add(comboTableName);
-		
-		// At the moment only gen static graph
-		/*tablePane.getChildren().add(lblTime);
-		tablePane.getChildren().add(txtTime);
-		tablePane.getChildren().add(btnRefresh);*/
 		
 		FlowPane btnPane = new FlowPane(Orientation.HORIZONTAL);
 		btnPane.setHgap(15);
@@ -58,13 +47,24 @@ public class MatrixEditor extends MatrixTool {
 		btnPane.setPadding(new Insets(15));
 
 		btnPane.getChildren().add(new Label("Split : "));
-		btnPane.getChildren().add(txtSplit);
+		btnPane.getChildren().add(split);
 		btnPane.getChildren().add(btnSave);
 		btnPane.getChildren().add(btnCancel);
 		
 		comboTableName.setOnAction((event) -> {
 			App.TABLE_NAME = options.get(comboTableName.getSelectionModel().getSelectedIndex());
-			showMatrix(Database.getMatrixAtTime(txtTime.getText()));
+			int totalTime = Database.getTotalTime(App.TABLE_NAME);
+			
+			refreshTime();
+			
+			generateMatrixFromEdgesList(Database.getMatrix(), totalTime);
+			
+			for(int i = 1; i <= totalTime; i++) {
+				generateTimeButtons();
+			}
+			
+			matrix.setText(getMatrixStr(currentTime));
+			showGraph();
 		});
 		
 		btnSave.setOnAction((event) -> {
@@ -74,7 +74,7 @@ public class MatrixEditor extends MatrixTool {
 				App.logConsole("No table specified!", App.WARNING);
 			} else {
 				Database.refreshTable(tableName);
-				generateGraph(tableName, txtSplit.getText());
+				saveGraph(tableName);
 			}
 			
 			close();
@@ -84,9 +84,10 @@ public class MatrixEditor extends MatrixTool {
 			close();
 		});
 		
-		content.getChildren().add(tablePane);
-		content.getChildren().add(matrix);
-		content.getChildren().add(btnPane);
+		matrixPane.getChildren().add(tablePane);
+		matrixPane.getChildren().add(timePane);
+		matrixPane.getChildren().add(matrix);
+		matrixPane.getChildren().add(btnPane);
 		
 	}
 }

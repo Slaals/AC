@@ -56,7 +56,13 @@ public class ConfDB extends Stage {
 		TextField txtPort = new TextField(Database.port);
 		TextField txtDb = new TextField(Database.db);
 		TextField txtUsern = new TextField(Database.userName);
-		TextField txtPasswd = new TextField(Database.passwd);
+		TextField txtPasswd = new TextField();
+		
+		if(Database.passwd == null) {
+			txtPasswd.setText("");
+		} else {
+			txtPasswd.setText(Database.passwd);
+		}
 		
 		FlowPane btnPane = new FlowPane(Orientation.HORIZONTAL);
 		btnPane.setHgap(15);
@@ -73,6 +79,8 @@ public class ConfDB extends Stage {
 			if(txtPasswd.getText().isEmpty()) {
 				Database.passwd = null;
 			}
+			
+			Database.checkDatabase(Database.db);
 			
 			app.refreshTable();
 			
