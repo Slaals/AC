@@ -58,7 +58,7 @@ public class ClusterView extends Stage {
 		
 		Scene scene = new Scene(content);
 		
-		setTitle("Matrix Creator");
+		setTitle("Clustering");
 		setMinHeight(600);
 		setMinWidth(1000);
 		

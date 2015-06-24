@@ -48,16 +48,12 @@ public class Database {
 				String insertValues = "INSERT INTO " + tableName + "(fromnode, tonode, fromtime, totime) VALUES(" +
 						edge.getFromnode() + ", " + edge.getTonode() + ", " + edge.getFromtime() + ", " + edge.getTotime() + ");";
 				
-				System.out.println(insertValues);
-				
 				st.executeUpdate(insertValues);
 			}
 			
 			for(Edge edge : updateEdge) {
 				String updateTime = "UPDATE " + tableName + " SET totime=" + edge.getTotime() + " WHERE fromNode=" + 
 						edge.getFromnode() + " AND toNode=" + edge.getTonode() + ";";
-				
-				System.out.println(updateTime);
 				
 				st.executeUpdate(updateTime);
 			}
