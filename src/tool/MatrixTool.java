@@ -6,8 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import core.App;
-import core.Database;
+import algorithm.object.Edge;
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.graph.Graph;
@@ -30,7 +29,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import object.Edge;
+import view.App;
+import view.feature.GraphView;
 
 public class MatrixTool extends Stage {
 	
@@ -42,12 +42,12 @@ public class MatrixTool extends Stage {
 	protected FlowPane timePane;
 	protected ComboBox<String> split;
 	
-	protected GraphViewer graph;
+	protected GraphView graph;
 	
 	protected int currentTime = 1;
 	
 	private ArrayList<ToggleButton> btnsTime;
-	protected HashMap<Integer, Integer[][]> matrixTime;
+	protected HashMap<Integer, Double[][]> matrixTime;
 	
 	protected App app;
 
@@ -58,7 +58,7 @@ public class MatrixTool extends Stage {
 		
 		this.app = app;
 		btnsTime = new ArrayList<ToggleButton>();
-		matrixTime = new HashMap<Integer, Integer[][]>();
+		matrixTime = new HashMap<Integer, Double[][]>();
 		
 		initStyle(StageStyle.UTILITY);
 		
@@ -81,16 +81,21 @@ public class MatrixTool extends Stage {
 		show();
 	}
 	
+	/**
+	 * Show the graph to the right
+	 */
 	public void showGraph() {
 		Graph<String, String> graph = new SparseMultigraph<String, String>();
 		
-		Integer[][] matrix = matrixTime.get(currentTime);
+		// Create nodes
+		Double[][] matrix = matrixTime.get(currentTime);
 		for(int vertex = 1; vertex <= matrix.length; vertex++) {
 			graph.addVertex(vertex + "");
 		}
 		
 		int edgeNumber = 1;
 		
+		// Create edges
 		for(int row = 0; row < matrix.length; row++) {
 			for(int col = 0; col < matrix[row].length; col++) {
 				if(matrix[row][col] != 0) {
@@ -116,7 +121,7 @@ public class MatrixTool extends Stage {
 		
 		// For each time
 		for(int currentTime = 1; currentTime <= matrixTime.size(); currentTime++) {
-			Integer[][] matrix = matrixTime.get(currentTime);
+			Double[][] matrix = matrixTime.get(currentTime);
 			
 			for(int i = currentTime; i < matrixTime.size(); i++) {
 				if(matrixTime.containsKey(currentTime + 1)) {
@@ -148,7 +153,7 @@ public class MatrixTool extends Stage {
 				break;
 			}
 		}
-		
+
 		return interval;
 	}
 	
@@ -158,36 +163,29 @@ public class MatrixTool extends Stage {
 	 * @param split char that determines how to split the matrix string
 	 */
 	protected void saveGraph(String tableName) {
-		int nbValues = 0;
-		int nbUpdates = 0;
-		
 		ArrayList<int[]> interval = defineInterval();
-		Integer[][] oldMatrix = null;
+		Double[][] oldMatrix = null;
 		
 		for(int[] intervalTime : interval) {
-			Integer[][] matrix = matrixTime.get(intervalTime[0]);
+			Double[][] matrix = matrixTime.get(intervalTime[0]);
 			
 			for(int row = 0; row < matrix.length; row++) {
 				for(int col = 0; col < matrix.length; col++) {
 					if(oldMatrix != null) {
-						if(matrix[row][col] != oldMatrix[row][col]) { // Compare the last matrix and the current matrix
+						if(matrix[row][col].compareTo(oldMatrix[row][col]) != 0) { // Compare the last matrix and the current matrix
 							if(matrix[row][col] > 0) { // If weight > 0 = new edge
-								Database.feedTable(tableName, row + 1, col + 1, intervalTime[0], intervalTime[1]);
-								nbValues++;
+								Database.setInsertEdge(new Edge((row + 1) + "", (col + 1) + "", intervalTime[0], intervalTime[1]));
 							} else { // Else the edge end at t = intervalTime[0] - 1
-								Database.updateEdgeTime(tableName, row + 1, col + 1, intervalTime[0] - 1);
-								nbUpdates++;
+								Database.setUpdateEdge(new Edge((row + 1) + "", (col + 1) + "", 0, intervalTime[0] - 1));
 							}
 						} else { // Values are equal
 							if(matrix[row][col] > 0) { // Edge still exists; update totime t = intervalTime[1]
-								Database.updateEdgeTime(tableName, row + 1, col + 1, intervalTime[1]);
-								nbUpdates++;
+								Database.setUpdateEdge(new Edge((row + 1) + "", (col + 1) + "", 0, intervalTime[1]));
 							}
 						}
 					} else { // First loop; insert all edges
 						if(matrix[row][col] > 0) { // First matrix, insert all edges
-							Database.feedTable(tableName, row + 1, col + 1, intervalTime[0], intervalTime[1]);
-							nbValues++;
+							Database.setInsertEdge(new Edge((row + 1) + "", (col + 1) + "", intervalTime[0], intervalTime[1]));
 						}
 					}
 				}
@@ -196,8 +194,7 @@ public class MatrixTool extends Stage {
 			oldMatrix = matrix;
 		}
 		
-		App.logConsole("\n" + nbValues + " values inserted! And ", App.INFO);
-		App.logConsole(nbUpdates + " updated!\n\n", App.INFO);
+		Database.persist(tableName);
 	}
 	
 	/**
@@ -232,11 +229,11 @@ public class MatrixTool extends Stage {
 		int time;
 		
 		for(int i = 0; i < totalTime; i++) {
-			Integer[][] matrix = new Integer[nbNodes][nbNodes];
+			Double[][] matrix = new Double[nbNodes][nbNodes];
 			
 			for(int row = 0; row < matrix.length; row++) {
 				for(int col = 0; col < matrix.length; col++) {
-					matrix[row][col] = 0;
+					matrix[row][col] = 0.;
 				}
 			}
 			
@@ -252,8 +249,8 @@ public class MatrixTool extends Stage {
 			time = fromTime;
 			
 			while(time <= toTime) {
-				Integer[][] matrix = matrixTime.get(time);
-				matrix[fromNode - 1][toNode - 1] = edge.getWeight();
+				Double[][] matrix = matrixTime.get(time);
+				matrix[fromNode - 1][toNode - 1] = (double)edge.getWeight();
 				matrixTime.put(time, matrix);
 				time += 1;
 			}
@@ -269,7 +266,7 @@ public class MatrixTool extends Stage {
 		String strMatrix = "";
 
 		if(matrixTime.get(time) != null) {
-			Integer[][] matrix = matrixTime.get(time);
+			Double[][] matrix = matrixTime.get(time);
 			for(int row = 0; row < matrix.length; row++) {
 				for(int col = 0; col < matrix[row].length; col++) {
 					strMatrix += matrix[row][col] + ";";
@@ -306,19 +303,19 @@ public class MatrixTool extends Stage {
 			
 		String[] rows = strMatrix.split("\n");
 		
-		Integer[][] matrix;
+		Double[][] matrix;
 		
 		if(!strMatrix.isEmpty()) {
 			matrix = matrixTime.get(currentTime);
 			
 			if(matrix == null) {
-				matrix = new Integer[rows.length][rows.length];
+				matrix = new Double[rows.length][rows.length];
 			}
 				
 			for(int row = 0; row < rows.length; row++) {
 				String[] edges = rows[row].split(DEFAULT_SPLIT);
 				for(int col = 0; col < edges.length; col++) {
-					matrix[row][col] = Integer.valueOf(edges[col]);
+					matrix[row][col] = Double.valueOf(edges[col]);
 				}
 			}
 			matrixTime.put(currentTime, matrix);
@@ -327,6 +324,9 @@ public class MatrixTool extends Stage {
 		}
 	}
 	
+	/**
+	 * Create time buttons
+	 */
 	protected void generateTimeButtons() {
 		currentTime = btnsTime.size() + 1;
 		
@@ -387,7 +387,7 @@ public class MatrixTool extends Stage {
 		Button btnRefresh = new Button("Refresh");
 		btnRefresh.setMaxWidth(Double.MAX_VALUE);
 		
-		graph = new GraphViewer();
+		graph = new GraphView();
 		
 		graphPane.getChildren().add(btnRefresh);
 		graphPane.getChildren().add(new Separator(Orientation.HORIZONTAL));

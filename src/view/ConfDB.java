@@ -1,5 +1,6 @@
-package core;
+package view;
 
+import tool.Database;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;

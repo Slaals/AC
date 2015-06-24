@@ -1,7 +1,7 @@
-package tool;
+package view.feature;
 
-import java.awt.Dimension;
 import java.awt.geom.Point2D;
+import java.util.HashMap;
 
 import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.algorithms.layout.util.Relaxer;
@@ -18,22 +18,39 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
-public class GraphViewer extends Group {
+public class GraphView extends Group {
 	private Relaxer relaxer;
-	private Layout<String, String> layout;
+	
 	private double NODE_SIZE = 10;
 	
+	private HashMap<String, Integer> nodesCluster;
+	
+	String[] colors;
+	
+	public GraphView() {
+		nodesCluster = new HashMap<String, Integer>();
+		colors = new String[]{"#000000", "#FF0000", "#109F02", "#1020FF", "#505010", "#330099"};
+	}
+	
+	public void addNodeCluster(String node, Integer cluster) {
+		nodesCluster.put(node, cluster);
+	}
+	
+	/**
+	 * Create the graph
+	 * It could be improved by updating only the part that needs to be updated
+	 * This algorithm below re-create the whole graph
+	 * @param layout
+	 */
 	public void refresh(Layout<String, String> layout) {
 		getChildren().clear();
-		
-		this.layout = layout;
-		this.layout.setSize(new Dimension(400, 400)); 
 		
 		if(relaxer != null) {
 			relaxer.stop();
 			relaxer = null;
 		}
 		
+		// Apply the chosen layout
 		if(layout instanceof IterativeContext) {
 			layout.initialize();
 			if(relaxer == null) {
@@ -45,6 +62,7 @@ public class GraphViewer extends Group {
 		
 		Graph<String, String> graph =  layout.getGraph();
 		
+		// Create edges : JavaFX lines
 		for(String edge : graph.getEdges()) {
 			Pair<String> endpoints = graph.getEndpoints(edge);
 			
@@ -61,10 +79,15 @@ public class GraphViewer extends Group {
 			getChildren().add(line);
 		}
 		
+		// Created vertices : JavaFX circles
 		for(String vertex : graph.getVertices()) {
 			Point2D p = layout.transform(vertex);
-
+			
 			Circle circle = new Circle();
+			
+			if(nodesCluster.containsKey(vertex)) {
+				circle.setFill(Color.web(colors[nodesCluster.get(vertex)]));
+			}
 			
 			circle.setCenterX(p.getX());
 			circle.setCenterY(p.getY());

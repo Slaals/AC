@@ -1,4 +1,4 @@
-package core;
+package tool;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -8,7 +8,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.LinkedList;
 
-import object.Edge;
+import algorithm.object.Edge;
+import view.App;
+import view.feature.Console;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -19,6 +21,58 @@ public class Database {
 	public static String db = "graph1";
 	public static String userName = "root";
 	public static String passwd = "root";
+	
+	private static LinkedList<Edge> insertEdge;
+	private static LinkedList<Edge> updateEdge;
+	
+	static {
+		insertEdge = new LinkedList<Edge>();
+		updateEdge = new LinkedList<Edge>();
+	}
+	
+	public static void setInsertEdge(Edge edge) {
+		insertEdge.add(edge);
+	}
+	
+	public static void setUpdateEdge(Edge edge) {
+		updateEdge.add(edge);
+	}
+	
+	public static void persist(String tableName) {
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			
+			Statement st = getConnection().createStatement();
+			
+			for(Edge edge : insertEdge) {
+				String insertValues = "INSERT INTO " + tableName + "(fromnode, tonode, fromtime, totime) VALUES(" +
+						edge.getFromnode() + ", " + edge.getTonode() + ", " + edge.getFromtime() + ", " + edge.getTotime() + ");";
+				
+				System.out.println(insertValues);
+				
+				st.executeUpdate(insertValues);
+			}
+			
+			for(Edge edge : updateEdge) {
+				String updateTime = "UPDATE " + tableName + " SET totime=" + edge.getTotime() + " WHERE fromNode=" + 
+						edge.getFromnode() + " AND toNode=" + edge.getTonode() + ";";
+				
+				System.out.println(updateTime);
+				
+				st.executeUpdate(updateTime);
+			}
+			
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		Console.getConsole().logConsole(insertEdge.size() + " values inserted!\n\n", Console.INFO);
+		
+		insertEdge.clear();
+		updateEdge.clear();
+	}
 	
 	public static ObservableList<String> getTables() {
 		ObservableList<String> options = FXCollections.observableArrayList();
@@ -57,23 +111,6 @@ public class Database {
 		}
 	}
 	
-	public static void updateTable(String tableName, String label, String fromNode, String toNode) {
-		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			
-			Statement st = getConnection().createStatement();
-			
-			String updateValues = "UPDATE " + tableName + " SET fromnode=" +
-					fromNode + ", tonode=" + toNode + " WHERE name=" + label + ";";
-			
-			st.executeUpdate(updateValues);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-	
 	public static void createTableGraph(String tableName) {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -94,7 +131,7 @@ public class Database {
 			
 			st.executeUpdate(createTable);
 			
-			App.logConsole("Table " + tableName + " created! ", App.SUCCESS);
+			Console.getConsole().logConsole("Table " + tableName + " created! ", Console.SUCCESS);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
@@ -130,23 +167,6 @@ public class Database {
 					fromNode + " AND toNode=" + toNode + ";";
 			
 			st.executeUpdate(updateTime);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public static void feedTable(String tableName, int fromNode, int toNode, int fromTime, int toTime) {
-		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			
-			Statement st = getConnection().createStatement();
-			
-			String insertValues = "INSERT INTO " + tableName + "(fromnode, tonode, fromtime, totime) VALUES(" +
-					fromNode + ", " + toNode + ", " + fromTime + ", " + toTime + ");";
-			
-			st.executeUpdate(insertValues);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {

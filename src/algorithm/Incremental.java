@@ -1,34 +1,20 @@
 package algorithm;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 import Jama.Matrix;
-import object.Edge;
 
 import org.jblas.DoubleMatrix;
 import org.jblas.SimpleBlas;
 
-import core.App;
-import core.Database;
+import algorithm.object.Edge;
+import tool.Database;
+import view.feature.Console;
 
-public class Dynamic extends Thread{
-	
-	public static int printmodularity = 0;
-	public static int printclustermodularity = 0;
-	public static int nbCluster = 3;
-	
-	private ArrayList<String> changes;
-	private ArrayList<String> modularity;
-	private ArrayList<String> modularityCluster;
-	private ArrayList<String[][]> matrixNode;
-	private ArrayList<String[][]> matrixEdge;
+public class Incremental extends Algorithm {
 	
 	private List<Double> incidenceW;
 	
@@ -36,23 +22,17 @@ public class Dynamic extends Thread{
 	
 	private LinkedList<Edge> edgeList;
 	
-	private Clusters[] clusters;
-	
 	private int nbEdges;
 	private String edgeLabel[][];
 	private int timeList[][];
 	private double edgeWeight[][];
 	
-	private int totalTime;
-	
-	private long chrono;
-	private long totalChrono;
-	
+	@Override
 	public void run() {
 		executeAlgorithm();
 	}
-	
-	public Dynamic() {
+
+	public Incremental() {
 		changes = new ArrayList<String>();
 		modularity = new ArrayList<String>();
 		modularityCluster = new ArrayList<String>();
@@ -72,7 +52,7 @@ public class Dynamic extends Thread{
 		totalChrono = 0;
 	}
 	
-	public void executeAlgorithm() {
+	private void executeAlgorithm() {
 		initMatrix();
 		
 		buildChanges();
@@ -160,81 +140,72 @@ public class Dynamic extends Thread{
 			}
 		}
 		
-		if (printmodularity == 1) {
+		// ///////////////////////////////////////////////////////////
+		// MODULARITY MODULARITY MODULARITY
+		// //////////////////////////////////////////////////////////////////
+		// Modularity Matrix will have the fraction of edges that links
+		// community i with community j
+		double edgesfraction[][] = new double[nbCluster][nbCluster];
 
-			// ///////////////////////////////////////////////////////////
-			// MODULARITY MODULARITY MODULARITY
-			// //////////////////////////////////////////////////////////////////
-			// Modularity Matrix will have the fraction of edges that links
-			// community i with community j
-			double edgesfraction[][] = new double[nbCluster][nbCluster];
+		int clusterA = 0;
+		int clusterB = 0;
 
-			int clusterA = 0;
-			int clusterB = 0;
+		for (int i = 0; i < clusters[time].edgenumber; i++) {
+			clusterA = 0;
+			clusterB = 0;
 
-			for (int i = 0; i < clusters[time].edgenumber; i++) {
-				clusterA = 0;
-				clusterB = 0;
+			for (int j = 0; j < clusters[time].nodes; j++) {
 
-				for (int j = 0; j < clusters[time].nodes; j++) {
-
-					if (clusters[time].edgelist[i][0].equals(clusters[time].clusterlabel[j][1])) {
-						clusterA = Integer.valueOf(clusters[time].clusterlabel[j][2]);
-					}
-				}
-
-				for (int t = 0; t < clusters[time].nodes; t++) {
-					if (clusters[time].edgelist[i][0].equals(clusters[time].clusterlabel[t][1])) {
-						clusterB = Integer.valueOf(clusters[time].clusterlabel[t][2]);
-					}
-				}
-
-				edgesfraction[clusterA - 1][clusterB - 1] = edgesfraction[clusterA - 1][clusterB - 1] + 1;
-			}
-
-			for (int i = 0; i < (nbCluster); i++) {
-				for (int j = 0; j < nbCluster; j++) {
-					edgesfraction[i][j] = edgesfraction[i][j] / (double) clusters[time].edgenumber;
+				if (clusters[time].edgelist[i][0].equals(clusters[time].clusterlabel[j][1])) {
+					clusterA = Integer.valueOf(clusters[time].clusterlabel[j][2]);
 				}
 			}
 
-			double weightedmean = 0;
-			double weightedmean2 = 0;
-
-			for (int i = 0; i < nbCluster; i++) {
-				weightedmean = weightedmean + edgesfraction[i][i] * edgesfraction[i][i];
-				weightedmean2 = (edgesfraction[i][i] * ((double) nodespercluster.get(i) / clusters[time].nodes)) + weightedmean2;
+			for (int t = 0; t < clusters[time].nodes; t++) {
+				if (clusters[time].edgelist[i][0].equals(clusters[time].clusterlabel[t][1])) {
+					clusterB = Integer.valueOf(clusters[time].clusterlabel[t][2]);
+				}
 			}
 
-			String str = "Weighted (%) Mean Modularity in Time " + time + " = " + weightedmean + "\n"
-					+ "Weighted (nodes) Mean Modularity2 in Time " + time + " = " + weightedmean2 + "\n"
-					+ "Edges t" + time + " = " + clusters[time].edgenumber + "\n\n";
-			modularity.add(str);
+			edgesfraction[clusterA - 1][clusterB - 1] = edgesfraction[clusterA - 1][clusterB - 1] + 1;
+		}
 
-			if (printclustermodularity == 1) {
-				str = "";
-				for (int c = 0; c < edgesfraction.length; c++) {
-					str += "Cluster " + c + " Modularity = " + edgesfraction[c][c] + "\n";
-				}
-				modularityCluster.add(str + "\n");
+		for (int i = 0; i < (nbCluster); i++) {
+			for (int j = 0; j < nbCluster; j++) {
+				edgesfraction[i][j] = edgesfraction[i][j] / (double) clusters[time].edgenumber;
 			}
 		}
+
+		double weightedmean = 0;
+		double weightedmean2 = 0;
+
+		for (int i = 0; i < nbCluster; i++) {
+			weightedmean = weightedmean + edgesfraction[i][i] * edgesfraction[i][i];
+			weightedmean2 = (edgesfraction[i][i] * ((double) nodespercluster.get(i) / clusters[time].nodes)) + weightedmean2;
+		}
+
+		String str = "Weighted (%) Mean Modularity in Time " + time + " = " + weightedmean + "\n"
+				+ "Weighted (nodes) Mean Modularity2 in Time " + time + " = " + weightedmean2 + "\n"
+				+ "Edges t" + time + " = " + clusters[time].edgenumber + "\n\n";
+		modularity.add(str);
+
+		str = "";
+		for (int c = 0; c < edgesfraction.length; c++) {
+			str += "Cluster " + c + " Modularity = " + edgesfraction[c][c] + "\n";
+		}
+		modularityCluster.add(str + "\n");
 		
 		long topChrono = System.currentTimeMillis() - chrono;
 		
 		totalChrono += topChrono;
 		
-		App.logConsole("Time " +  time + " : " + nodespercluster, App.PLAIN);
+		Console.getConsole().logConsole("Time " +  time + " : " + nodespercluster, Console.PLAIN);
 		
-		App.logConsole(" -> Done! in  " + topChrono + "ms\n\n", App.SUCCESS);
+		Console.getConsole().logConsole(" -> Done! in  " + topChrono + "ms\n\n", Console.SUCCESS);
 		
 		chrono = System.currentTimeMillis();
 		
 		nodespercluster.clear();
-	}
-	
-	public LinkedList<Edge> getEdgeList() {
-		return edgeList;
 	}
 	
 	private void initMatrix() {
@@ -343,7 +314,7 @@ public class Dynamic extends Thread{
 			
 			startSpectralClustering(nbNode, nbEdgeByTime, time);
 		} catch (Exception e) {
-			App.logConsole("Got an exception!\n\n", App.WARNING);
+			Console.getConsole().logConsole("Got an exception!\n\n", Console.WARNING);
 
 			e.printStackTrace();
 		}
@@ -717,89 +688,81 @@ public class Dynamic extends Thread{
 				}
 			}
 
-			App.logConsole("Time " +  time + " : " + nodesPerCluster, App.PLAIN);
+			Console.getConsole().logConsole("Time " +  time + " : " + nodesPerCluster, Console.PLAIN);
 			
 			matrixNode.add(clusters[time].clusterlabel);
 
 
-			if (printmodularity == 1) {
+			// ///////////////////////////////////////////////////////////
+			// MODULARITY MODULARITY MODULARITY
+			// //////////////////////////////////////////////////////////////////
+			// Modularity Matrix will have the fraction of edges that
+			// links community i with community j
+			double edgesfraction[][] = new double[nbCluster][nbCluster];
 
-				// ///////////////////////////////////////////////////////////
-				// MODULARITY MODULARITY MODULARITY
-				// //////////////////////////////////////////////////////////////////
-				// Modularity Matrix will have the fraction of edges that
-				// links community i with community j
-				double edgesfraction[][] = new double[nbCluster][nbCluster];
+			int clusterA = 0;
+			int clusterB = 0;
 
-				int clusterA = 0;
-				int clusterB = 0;
+			for (int i = 0; i < clusters[time].edgenumber; i++) {
+				clusterA = 0;
+				clusterB = 0;
 
-				for (int i = 0; i < clusters[time].edgenumber; i++) {
-					clusterA = 0;
-					clusterB = 0;
+				for (int j = 0; j < clusters[time].nodes; j++) {
 
-					for (int j = 0; j < clusters[time].nodes; j++) {
-
-						if (clusters[time].edgelist[i][0].equals(clusters[time].clusterlabel[j][1])) {
-							clusterA = Integer.valueOf(clusters[time].clusterlabel[j][2]);
-						}
-					}
-
-					for (int t = 0; t < clusters[time].nodes; t++) {
-						if (clusters[time].edgelist[i][0].equals(clusters[time].clusterlabel[t][1])) {
-							clusterB = Integer.valueOf(clusters[time].clusterlabel[t][2]);
-						}
-					}
-
-					edgesfraction[clusterA - 1][clusterB - 1] = edgesfraction[clusterA - 1][clusterB - 1] + 1;
-				}
-
-				for (int i = 0; i < (nbCluster); i++) {
-					for (int j = 0; j < nbCluster; j++) {
-						edgesfraction[i][j] = edgesfraction[i][j] / (double) clusters[time].edgenumber;
+					if (clusters[time].edgelist[i][0].equals(clusters[time].clusterlabel[j][1])) {
+						clusterA = Integer.valueOf(clusters[time].clusterlabel[j][2]);
 					}
 				}
 
-				double weightedmean = 0;
-				double weightedmean2 = 0;
-
-				for (int i = 0; i < nbCluster; i++) {
-					weightedmean = weightedmean + edgesfraction[i][i] * edgesfraction[i][i];
-					weightedmean2 = (edgesfraction[i][i] * nodesPerCluster.get(i) / clusters[time].nodes) + weightedmean2;
-				}
-
-				str = "Weighted (%) Mean Modularity in Time " + time + " = " + weightedmean + "\n"
-						+ "Weighted (nodes) Mean Modularity2 in Time " + time + " = " + weightedmean2 + "\n"
-						+ "Edges t" + time + " = " + clusters[time].edgenumber + "\n\n";
-				
-				modularity.add(str);
-
-				if (printclustermodularity == 1) {
-					str = "";
-					for (int c = 0; c < edgesfraction.length; c++) {
-						str += "Cluster " + c + " Modularity = " + edgesfraction[c][c] + "\n";
+				for (int t = 0; t < clusters[time].nodes; t++) {
+					if (clusters[time].edgelist[i][0].equals(clusters[time].clusterlabel[t][1])) {
+						clusterB = Integer.valueOf(clusters[time].clusterlabel[t][2]);
 					}
-					modularityCluster.add(str + "\n");
 				}
-				// modularity measures the quantity of edges that connect
-				// nodes in the same cluster
-				// double modularity=0;
-				// modularity=trace-Math.sqrt(Math.sqrt(Math.pow(trace,
-				// 2)));
 
+				edgesfraction[clusterA - 1][clusterB - 1] = edgesfraction[clusterA - 1][clusterB - 1] + 1;
 			}
+
+			for (int i = 0; i < (nbCluster); i++) {
+				for (int j = 0; j < nbCluster; j++) {
+					edgesfraction[i][j] = edgesfraction[i][j] / (double) clusters[time].edgenumber;
+				}
+			}
+
+			double weightedmean = 0;
+			double weightedmean2 = 0;
+
+			for (int i = 0; i < nbCluster; i++) {
+				weightedmean = weightedmean + edgesfraction[i][i] * edgesfraction[i][i];
+				weightedmean2 = (edgesfraction[i][i] * nodesPerCluster.get(i) / clusters[time].nodes) + weightedmean2;
+			}
+
+			str = "Weighted (%) Mean Modularity in Time " + time + " = " + weightedmean + "\n"
+					+ "Weighted (nodes) Mean Modularity2 in Time " + time + " = " + weightedmean2 + "\n"
+					+ "Edges t" + time + " = " + clusters[time].edgenumber + "\n\n";
+			
+			modularity.add(str);
+
+			str = "";
+			for (int c = 0; c < edgesfraction.length; c++) {
+				str += "Cluster " + c + " Modularity = " + edgesfraction[c][c] + "\n";
+			}
+			modularityCluster.add(str + "\n");
+
 			nodesPerCluster.clear();
 			
 			long topChrono = System.currentTimeMillis() - chrono;
 			
 			totalChrono += topChrono;
 			
-			App.logConsole(" -> Done! in  " + topChrono + "ms\n\n", App.SUCCESS);
+			Console.getConsole().logConsole(" -> Done! in  " + topChrono + "ms\n\n", Console.SUCCESS);
 			
 			chrono = System.currentTimeMillis();
 		}
 		
-		App.logConsole("The algorithm has been successfully completed! in  " + totalChrono + "ms\n\n", App.SUCCESS);
+		Kmeans.reset();
+		
+		Console.getConsole().logConsole("The algorithm has been successfully completed! in  " + totalChrono + "ms\n\n", Console.SUCCESS);
 	}
 
 	// Merge 2nd and 3rd eigenvectors to create the NEW subspace for KMEANS
@@ -1247,106 +1210,6 @@ public class Dynamic extends Thread{
 		return minValue;
 	}
 
-	public void createNodesView() {
-		int time = 0;
-		for(String[][] matrix : matrixNode) {
-			time += 1;
-			try {
-				FileWriter writer = new FileWriter(App.DATA_PATH + "\\" + App.TABLE_NAME + "_nodes_t" + time + ".csv");
-				
-				writer.append("id");
-				writer.append(";");
-				writer.append("label");
-				writer.append(";");
-				writer.append("cluster");
-				
-				for (int row = 0; row < matrix.length; row++) {
-					writer.append("\n");
-					writer.append(matrix[row][1] + "");
-					writer.append(";");
-					writer.append(matrix[row][1] + "");
-					writer.append(";");
-					writer.append(matrix[row][2] + "");
-				}
-				
-				App.logConsole(App.DATA_PATH + "\\" + App.TABLE_NAME + "_nodes_t" + time + ".csv" + " created!\n\n", App.SUCCESS);
-				
-				writer.flush();
-				writer.close();
-			} catch (IOException e) {
-				App.logConsole("An exception has been encountered while trying to create "
-						+ App.TABLE_NAME + "_nodes_t" + time + ".csv\n\n", App.WARNING);
-				
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	public void createEdgesView() {
-		int time = 0;
-		for(String[][] matrix : matrixEdge) {
-			time += 1;
-			try {
-				FileWriter writer = new FileWriter(App.DATA_PATH + "\\" + App.TABLE_NAME + "_edges_t" + time + ".csv");
-				
-				writer.append("id");
-				writer.append(";");
-				writer.append("source");
-				writer.append(";");
-				writer.append("target");
-				writer.append(";");
-				writer.append("type");
-				writer.append(";");
-				writer.append("weight");
-				
-				for (int row = 0; row < matrix.length; row++) {
-					int id = row + 1;
-					writer.append("\n");
-					writer.append(id + "");
-					writer.append(";");
-					writer.append(matrix[row][0] + "");
-					writer.append(";");
-					writer.append(matrix[row][1] + "");
-					writer.append(";");
-					writer.append("undirected");
-					writer.append(";");
-					writer.append("1");
-				}
-				
-				App.logConsole(App.DATA_PATH + "\\" + App.TABLE_NAME + "_edges_t" + time + ".csv" + " created!\n\n", App.SUCCESS);
-
-				writer.flush();
-				writer.close();
-			} catch (IOException e) {
-				Text text = new Text("An exception has been encountered while trying to create "
-						+ App.TABLE_NAME + "_edges_t" + time + ".csv\n\n");
-				text.setFill(Color.web("#F6888B"));
-				
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	public ArrayList<String> getChanges() {
-		return changes;
-	}
-	
-	public ArrayList<String[][]> getMatrixNode() {
-		return matrixNode;
-	}
-	
-	public ArrayList<String[][]> getMatrixEdge() {
-		return matrixEdge;
-	}
-	
-	public ArrayList<String> getModularity() {
-		return modularity;
-	}
-	
-	public ArrayList<String> getModularityCluster() {
-		return modularityCluster;
-	}
-
 	// method to transform a MATRIX to an ARRAY
 	private double[][] matrix2array(Matrix matrix) {
 		double arraybeta[][] = new double[matrix.getRowDimension()][matrix.getColumnDimension()];
@@ -1357,6 +1220,11 @@ public class Dynamic extends Thread{
 			}
 		}
 		return arraybeta;
+	}
+
+	@Override
+	public Algorithm reset() {
+		return new Incremental();
 	}
 
 }

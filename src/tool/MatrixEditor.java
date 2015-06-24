@@ -1,5 +1,7 @@
 package tool;
 
+import view.App;
+import view.feature.Console;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -10,8 +12,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
-import core.App;
-import core.Database;
 
 public class MatrixEditor extends MatrixTool {
 	
@@ -70,8 +70,10 @@ public class MatrixEditor extends MatrixTool {
 		btnSave.setOnAction((event) -> {
 			String tableName = options.get(comboTableName.getSelectionModel().getSelectedIndex());
 			
+			generateMatrixFromString();
+			
 			if(tableName.isEmpty()) {
-				App.logConsole("No table specified!", App.WARNING);
+				Console.getConsole().logConsole("No table specified!", Console.WARNING);
 			} else {
 				Database.refreshTable(tableName);
 				saveGraph(tableName);

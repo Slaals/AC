@@ -4,19 +4,28 @@ public class Kmeans {
 	
 	private static boolean difference = false;
 	
+	private static double[][] CENTROIDS = null;
+	
+	public static void reset() {
+		difference = false;
+		CENTROIDS = null;
+	}
+	
 	public static int[] exec(int nbClusters, double[][] points) {
 		// Define the initial centroids
-		double[][] centroids = defineCentroids(nbClusters, points);
+		if(CENTROIDS == null) {
+			defineCentroids(nbClusters, points);
+		} 
 		
 		// Find the nearest centroid for each point
-		int[] pointCentroid = findNearestCentroid(centroids, points);
+		int[] pointCentroid = findNearestCentroid(points);
 		
 		do { // Redfine centroid and find the nearest centroid until each node isn't re-clustered
 			difference = false;
 			
-			centroids = redefineCentroids(centroids, pointCentroid, points);
+			redefineCentroids(pointCentroid, points);
 
-			pointCentroid = findNearestCentroid(centroids, points, pointCentroid);
+			pointCentroid = findNearestCentroid(points, pointCentroid);
 
 		} while(difference);
 		
@@ -29,12 +38,12 @@ public class Kmeans {
 	 * @param points
 	 * @return
 	 */
-	private static double[][] redefineCentroids(double[][] centroids, int[] pointCentroid, double[][] points) {
+	private static void redefineCentroids(int[] pointCentroid, double[][] points) {
 		double totalDistanceX = 0;
 		double totalDistanceY = 0;
 		double quantityNode = 0;
 		
-		for(int centroid = 0; centroid < centroids.length; centroid++) {
+		for(int centroid = 0; centroid < CENTROIDS.length; centroid++) {
 			for(int point = 0; point < pointCentroid.length; point++) {
 				if(Integer.valueOf(pointCentroid[point]) == centroid) {
 					totalDistanceX += points[point][0];
@@ -44,16 +53,14 @@ public class Kmeans {
 			}
 			
 			if(quantityNode > 0) {
-				centroids[centroid][0] = totalDistanceX / quantityNode;
-				centroids[centroid][1] = totalDistanceY / quantityNode;
+				CENTROIDS[centroid][0] = totalDistanceX / quantityNode;
+				CENTROIDS[centroid][1] = totalDistanceY / quantityNode;
 			} 
 			
 			totalDistanceX = 0;
 			totalDistanceY = 0;
 			quantityNode = 0;
 		}
-		
-		return centroids;
 	}
 	
 	/**
@@ -61,7 +68,7 @@ public class Kmeans {
 	 * @param points
 	 * @return
 	 */
-	private static double[][] defineCentroids(int nbClusters, double[][] points) {
+	private static void defineCentroids(int nbClusters, double[][] points) {
 		double randXCoord = 0;
 		double randYCoord = 0;
 		
@@ -77,7 +84,7 @@ public class Kmeans {
 			centroids[i][1] = randYCoord;
 		}
 		
-		return centroids;
+		CENTROIDS = centroids;
 	}
 	
 	/**
@@ -87,16 +94,16 @@ public class Kmeans {
 	 * @param previousPointCentroid
 	 * @return
 	 */
-	private static int[] findNearestCentroid(double[][] centroids, double[][] points, int[] previousPointCentroid) {
+	private static int[] findNearestCentroid(double[][] points, int[] previousPointCentroid) {
 		double distance = 0;
 		double minDistance = 1;
 		
 		int[] pointCentroid = new int[points.length];
 		
 		for (int i = 0; i < points.length; i++) {
-			for (int j = 0; j < centroids.length; j++) {
-				distance = Math.sqrt(Math.pow(points[i][0] - centroids[j][0], 2)
-								+ Math.pow(points[i][1] - centroids[j][1], 2));
+			for (int j = 0; j < CENTROIDS.length; j++) {
+				distance = Math.sqrt(Math.pow(points[i][0] - CENTROIDS[j][0], 2)
+								+ Math.pow(points[i][1] - CENTROIDS[j][1], 2));
 				
 				if(distance < minDistance) {
 					minDistance = distance;
@@ -119,16 +126,16 @@ public class Kmeans {
 	 * @param points
 	 * @return
 	 */
-	private static int[] findNearestCentroid(double[][] centroids, double[][] points) {
+	private static int[] findNearestCentroid(double[][] points) {
 		double distance = 0;
 		double minDistance = 1;
 		
 		int[] pointCentroid = new int[points.length];
 		
 		for (int i = 0; i < points.length; i++) {
-			for (int j = 0; j < centroids.length; j++) {
-				distance = Math.sqrt(Math.pow(points[i][0] - centroids[j][0], 2)
-								+ Math.pow(points[i][1] - centroids[j][1], 2));
+			for (int j = 0; j < CENTROIDS.length; j++) {
+				distance = Math.sqrt(Math.pow(points[i][0] - CENTROIDS[j][0], 2)
+								+ Math.pow(points[i][1] - CENTROIDS[j][1], 2));
 				
 				if(distance < minDistance) {
 					minDistance = distance;

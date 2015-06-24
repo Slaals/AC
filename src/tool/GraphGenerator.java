@@ -24,7 +24,8 @@ import org.gephi.io.importer.api.ContainerFactory;
 import org.gephi.project.api.ProjectController;
 import org.openide.util.Lookup;
 
-import core.App;
+import view.App;
+import view.feature.Console;
 
 public class GraphGenerator {
 	
@@ -59,7 +60,10 @@ public class GraphGenerator {
         Lookup.getDefault().lookup(ContainerFactory.class).newContainer();
 	}
 	
-	private void genGraph() {
+	/**
+	 * Generate Gephi graph
+	 */
+	private void generateGraph() {
 		HashMap<String, Node> nodesKey = new HashMap<String, Node>();
 		
 		UndirectedGraph graph = graphModel.getUndirectedGraph();
@@ -125,7 +129,7 @@ public class GraphGenerator {
 	/**
 	 * Generate all the intervals to fill dynamic columns
 	 */
-	private void genIntervals() {
+	private void createIntervals() {
 		// Nodes interval
 		for(Map.Entry<Node, LinkedHashSet<Integer>> entry : nodesInterval.entrySet()) {
 			LinkedHashSet<Integer> intervals = entry.getValue();
@@ -168,7 +172,6 @@ public class GraphGenerator {
 	
 	/**
 	 * Create interval time about cluster 
-	 * 
 	 * @param n node targeted
 	 * @return
 	 */
@@ -237,7 +240,7 @@ public class GraphGenerator {
         Lookup.getDefault().lookup(DynamicController.class).getModel();
         graphModel = Lookup.getDefault().lookup(GraphController.class).getModel();
         
-        genGraph();
+        generateGraph();
         
         // Time interval for edges and nodes
         timeColumn.addAttributeColumn(attModel.getNodeTable(), "time", AttributeType.TIME_INTERVAL);
@@ -249,7 +252,7 @@ public class GraphGenerator {
         timeColumn.convertAttributeColumnToDynamic(attModel.getEdgeTable(), attModel.getEdgeTable().getColumn("Weight"), 
         		2000, Double.POSITIVE_INFINITY, false, false);
         
-        genIntervals();
+        createIntervals();
         
         // Necessary
         try {
@@ -264,7 +267,7 @@ public class GraphGenerator {
         	File file = new File(App.DATA_PATH + "\\" + App.TABLE_NAME + ".gexf");
         	ec.exportFile(file);
         	
-        	App.logConsole("File " + file.getAbsolutePath() + " created!\n\n", App.SUCCESS);
+        	Console.getConsole().logConsole("File " + file.getAbsolutePath() + " created!\n\n", Console.SUCCESS);
         } catch(IOException ex) {
         	ex.printStackTrace();
         }

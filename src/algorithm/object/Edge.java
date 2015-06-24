@@ -1,4 +1,4 @@
-package object;
+package algorithm.object;
 public class Edge {
 
 	private String fromnode;
@@ -6,6 +6,17 @@ public class Edge {
 	private int weight;
 	private int fromtime;
 	private int totime;
+	
+	public Edge() {
+		
+	}
+	
+	public Edge(String fromnode, String tonode, int fromtime, int totime) {
+		this.fromnode = fromnode;
+		this.tonode = tonode;
+		this.fromtime = fromtime;
+		this.totime = totime;
+	}
 
 	public int getWeight() {
 		return weight;
