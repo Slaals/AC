@@ -55,7 +55,7 @@ public class Database {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			
-			Statement st = getConnection().createStatement();
+			Statement st = getConnectionDB().createStatement();
 			
 			for(Edge edge : insertEdge) {
 				String insertValues = "INSERT INTO " + tableName + "(fromnode, tonode, fromtime, totime) VALUES(" +
@@ -93,7 +93,7 @@ public class Database {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			
-			DatabaseMetaData md = getConnection().getMetaData();
+			DatabaseMetaData md = getConnectionDB().getMetaData();
 			ResultSet rs = md.getTables(null, null, "%", null);
 			while(rs.next()) {
 				options.add(rs.getString(3));
@@ -114,9 +114,9 @@ public class Database {
 			
 			Statement st = getConnection().createStatement();
 			
-			String createDbIfExists = "CREATE DATABASE IF NOT EXISTS " + database;
+			String createDb = "CREATE DATABASE IF NOT EXISTS " + database + ";";
 			
-			st.executeUpdate(createDbIfExists);
+			st.executeUpdate(createDb);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
@@ -128,7 +128,7 @@ public class Database {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			
-			Statement st = getConnection().createStatement();
+			Statement st = getConnectionDB().createStatement();
 			
 			String dropTable = "DROP TABLE IF EXISTS " + tableName + ";";
 			
@@ -156,7 +156,7 @@ public class Database {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			
-			Statement st = getConnection().createStatement();
+			Statement st = getConnectionDB().createStatement();
 			ResultSet srs = st.executeQuery("SELECT MAX(totime) AS totime FROM " + App.TABLE_NAME);
 			
 			srs.next();
@@ -174,7 +174,7 @@ public class Database {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			
-			Statement st = getConnection().createStatement();
+			Statement st = getConnectionDB().createStatement();
 			
 			String updateTime = "UPDATE " + tableName + " SET totime=" + time + " WHERE fromNode=" + 
 					fromNode + " AND toNode=" + toNode + ";";
@@ -191,7 +191,7 @@ public class Database {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			
-			Statement st = getConnection().createStatement();
+			Statement st = getConnectionDB().createStatement();
 			
 			String deleteValues = "DELETE FROM " + tableName;
 			
@@ -207,7 +207,7 @@ public class Database {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			
-			Statement st = getConnection().createStatement();
+			Statement st = getConnectionDB().createStatement();
 			ResultSet srs = st.executeQuery("SELECT * FROM " + App.TABLE_NAME + " ORDER BY fromnode ASC, tonode ASC");
 			
 			return generateEdgeMatrix(srs);
@@ -237,7 +237,11 @@ public class Database {
 		return edgeList;
 	}
 	
-	private static Connection getConnection() throws SQLException {
+	private static Connection getConnectionDB() throws SQLException {
 		return DriverManager.getConnection("jdbc:mysql://" + address + ":" + port + "/" + db, userName, passwd);
+	}
+	
+	private static Connection getConnection() throws SQLException {
+		return DriverManager.getConnection("jdbc:mysql://" + address + ":" + port, userName, passwd);
 	}
 }
