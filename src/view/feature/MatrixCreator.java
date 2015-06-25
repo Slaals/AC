@@ -1,5 +1,7 @@
-package tool;
+package view.feature;
 
+import tool.Database;
+import tool.MatrixTool;
 import view.App;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;

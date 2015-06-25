@@ -10,11 +10,11 @@ import java.util.regex.Pattern;
 
 import tool.Database;
 import tool.GraphGenerator;
-import tool.MatrixCreator;
-import tool.MatrixEditor;
 import view.feature.ClusterView;
 import view.feature.Command;
 import view.feature.Console;
+import view.feature.MatrixCreator;
+import view.feature.MatrixEditor;
 import algorithm.Incremental;
 import algorithm.Algorithm;
 import javafx.application.Application;

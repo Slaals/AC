@@ -57,5 +57,15 @@ public class Edge {
 	public void setTotime(int totime) {
 		this.totime = totime;
 	}
+	
+	@Override
+	public boolean equals(Object pEdge) {
+		if(pEdge instanceof Edge) {
+			Edge edge = (Edge)pEdge;
+			return ((fromnode.equals(edge.getFromnode())) && (tonode.equals(edge.getTonode())));
+		}
+		
+		return false;
+	}
 
 }

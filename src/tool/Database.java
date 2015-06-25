@@ -35,7 +35,20 @@ public class Database {
 	}
 	
 	public static void setUpdateEdge(Edge edge) {
-		updateEdge.add(edge);
+		boolean modify = false; 
+		
+		for(int i = 0; i < updateEdge.size(); i++) {
+			Edge ed = updateEdge.get(i);
+			if(ed.equals(edge)) {
+				ed.setTotime(edge.getTotime());
+				modify = true;
+				break;
+			}
+		}
+		
+		if(!modify) {
+			updateEdge.add(edge);
+		}
 	}
 	
 	public static void persist(String tableName) {
@@ -48,12 +61,16 @@ public class Database {
 				String insertValues = "INSERT INTO " + tableName + "(fromnode, tonode, fromtime, totime) VALUES(" +
 						edge.getFromnode() + ", " + edge.getTonode() + ", " + edge.getFromtime() + ", " + edge.getTotime() + ");";
 				
+				System.out.println(insertValues);
+				
 				st.executeUpdate(insertValues);
 			}
 			
 			for(Edge edge : updateEdge) {
 				String updateTime = "UPDATE " + tableName + " SET totime=" + edge.getTotime() + " WHERE fromNode=" + 
 						edge.getFromnode() + " AND toNode=" + edge.getTonode() + ";";
+				
+				System.out.println(updateTime);
 				
 				st.executeUpdate(updateTime);
 			}

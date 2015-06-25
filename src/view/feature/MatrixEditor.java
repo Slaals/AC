@@ -1,7 +1,8 @@
-package tool;
+package view.feature;
 
+import tool.Database;
+import tool.MatrixTool;
 import view.App;
-import view.feature.Console;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
